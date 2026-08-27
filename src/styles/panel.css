@@ -1,0 +1,309 @@
+/* YouTube exposes its theme through the `dark` attribute on <html>; the --yt-spec-* variables
+   do not resolve from a content script. */
+/* Geometry taken from the native "Share" button (40px, radius 20px, Roboto 500/14), but with a
+   solid accent fill: the button must stand out from the grey pills, not blend into them. */
+#watchless-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 8px;
+  padding: 0 16px;
+  height: 40px;
+  border: none;
+  border-radius: 20px;
+  min-width: 148px; /* the label changes at every step: the pill must not jump */
+  background: #ffcc00;
+  color: #0f0f0f;
+  font:
+    600 14px "Roboto",
+    Arial,
+    sans-serif;
+  cursor: pointer;
+}
+#watchless-btn:hover {
+  background: #ffd633;
+}
+#watchless-btn svg {
+  flex: none;
+}
+#watchless-btn[disabled] {
+  cursor: default;
+  opacity: 0.8;
+}
+#watchless-btn[disabled]:hover {
+  background: #ffcc00;
+}
+#watchless-btn:hover svg {
+  animation: watchless-icon 1.1s ease-in-out infinite;
+}
+
+#watchless-label {
+  display: inline-flex;
+  transition: letter-spacing 0.3s ease;
+}
+/* step labels ("Analyze 3/5…") are one span per character: without `pre` their spaces collapse */
+#watchless-label span {
+  white-space: pre;
+}
+#watchless-btn:hover #watchless-label {
+  font-style: italic;
+  letter-spacing: 0.4px;
+}
+#watchless-btn:hover #watchless-label span {
+  animation: watchless-wave 1.1s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 60ms);
+}
+
+#watchless-btn[data-state="busy"] svg {
+  display: none;
+}
+#watchless-btn[data-state="busy"]::before {
+  content: "";
+  flex: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: watchless-spin 0.7s linear infinite;
+}
+#watchless-btn[disabled]:hover #watchless-label {
+  font-style: normal;
+  letter-spacing: normal;
+}
+#watchless-btn[disabled]:hover #watchless-label span {
+  animation: none;
+}
+
+@keyframes watchless-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes watchless-wave {
+  0%,
+  55%,
+  100% {
+    transform: translateY(0);
+    font-weight: 600;
+  }
+  25% {
+    transform: translateY(-4px);
+    font-weight: 900;
+  }
+}
+@keyframes watchless-icon {
+  0%,
+  100% {
+    transform: none;
+  }
+  50% {
+    transform: rotate(-8deg) scale(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #watchless-label {
+    transition: none;
+  }
+  #watchless-btn:hover svg,
+  #watchless-btn:hover #watchless-label span {
+    animation: none;
+  }
+  #watchless-btn[data-state="busy"]::before {
+    animation-duration: 2.4s;
+  }
+}
+/* Native <dialog> opened with showModal(): the top layer clears YouTube's masthead without a
+   z-index, and ::backdrop dims the page behind the sheet. Width is capped for the measure —
+   80vw on a wide screen gave 200-character lines. Its own scroll, so the header sticks to the
+   sheet rather than to the page. */
+#watchless-panel {
+  width: min(92vw, 720px);
+  max-width: none;
+  max-height: 82vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgb(0 0 0 / 55%);
+  background: #fff;
+  color: #0f0f0f;
+  font:
+    400 15px / 1.65 "Roboto",
+    sans-serif;
+}
+#watchless-panel::backdrop {
+  background: rgb(0 0 0 / 65%);
+  backdrop-filter: blur(3px);
+}
+/* The actions follow the reader down a long summary. */
+#watchless-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 28px;
+  background: inherit;
+  border-bottom: 1px solid #e5e5e5;
+  border-radius: 16px 16px 0 0;
+}
+#watchless-body {
+  padding: 4px 28px 28px;
+}
+#watchless-close {
+  background: none;
+  border: none;
+  padding: 0 4px;
+  color: inherit;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+#watchless-close:hover {
+  opacity: 0.6;
+}
+/* Section labels, not headings in the flow: the eye should land on the prose, not on them. */
+#watchless-panel h3 {
+  margin: 26px 0 8px;
+  color: #606060;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+#watchless-panel h3:first-child {
+  margin-top: 16px;
+}
+#watchless-panel h3 + p {
+  margin-top: 0;
+}
+#watchless-panel ul {
+  margin: 0;
+  padding-left: 20px;
+}
+#watchless-panel li {
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+#watchless-panel li::marker {
+  color: #909090;
+}
+.watchless-tags {
+  margin-top: 22px;
+  color: #606060;
+  font-style: italic;
+}
+.watchless-format {
+  margin-right: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #0f0f0f;
+  color: #fff;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 12px;
+}
+.watchless-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+.watchless-checks span {
+  padding: 2px 9px;
+  border: 1px solid #d0d0d0;
+  border-radius: 10px;
+  color: #606060;
+  font-size: 12px;
+}
+.watchless-why {
+  margin: 6px 0 0;
+  color: #606060;
+  font-size: 12px;
+  font-style: italic;
+}
+.watchless-error {
+  color: #c00;
+}
+#watchless-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#watchless-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 16px;
+  background: #0f0f0f;
+  color: #fff;
+  font:
+    500 13px "Roboto",
+    sans-serif;
+  cursor: pointer;
+}
+#watchless-actions button:hover {
+  opacity: 0.85;
+}
+#watchless-actions svg {
+  flex: none;
+}
+
+#watchless-panel[open] {
+  animation: watchless-sheet 0.18s ease-out;
+}
+@keyframes watchless-sheet {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+html[dark] #watchless-panel {
+  background: #212121;
+  color: #f1f1f1;
+}
+html[dark] #watchless-head {
+  border-bottom-color: #383838;
+}
+html[dark] #watchless-panel h3 {
+  color: #a8a8a8;
+}
+html[dark] #watchless-panel li::marker {
+  color: #777;
+}
+html[dark] #watchless-actions button {
+  background: #f1f1f1;
+  color: #0f0f0f;
+}
+html[dark] .watchless-format {
+  background: #f1f1f1;
+  color: #0f0f0f;
+}
+html[dark] .watchless-error {
+  color: #ff8080;
+}
+html[dark] .watchless-tags {
+  color: #aaa;
+}
+html[dark] .watchless-checks span {
+  border-color: #4a4a4a;
+  color: #aaa;
+}
+html[dark] .watchless-why {
+  color: #aaa;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #watchless-panel[open] {
+    animation: none;
+  }
+}

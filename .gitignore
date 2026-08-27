@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+dist/
+*.zip
+docs/superpowers/
+.claude/
+tasks/
+*.local.*

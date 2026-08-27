@@ -1,0 +1,26 @@
+{
+  "name": "watchless",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs --minify",
+    "watch": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test",
+    "lint": "biome lint .",
+    "check": "biome check . && npm run typecheck",
+    "format": "biome format --write .",
+    "check:format": "biome format .",
+    "knip": "knip"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.10",
+    "@types/chrome": "^0.2.7",
+    "@types/dom-chromium-ai": "^0.0.17",
+    "@types/node": "^26.3.0",
+    "esbuild": "^0.28.2",
+    "knip": "^6.32.3",
+    "typescript": "^7.0.2"
+  }
+}

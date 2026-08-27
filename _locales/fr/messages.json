@@ -1,0 +1,378 @@
+{
+  "app_name": {
+    "message": "Watchless"
+  },
+  "app_description": {
+    "message": "Regarde moins, retiens plus. Résumés YouTube locaux (Gemini Nano) exportés vers Obsidian."
+  },
+  "btn_view_summary": {
+    "message": "Voir le résumé"
+  },
+  "export_to": {
+    "message": "Exporter vers…"
+  },
+  "btn_obsidian": {
+    "message": "→ Obsidian"
+  },
+  "btn_claude": {
+    "message": "→ Claude"
+  },
+  "btn_chatgpt": {
+    "message": "→ ChatGPT"
+  },
+  "btn_copy": {
+    "message": "Copier"
+  },
+  "btn_copied": {
+    "message": "Copié ✓"
+  },
+  "close_title": {
+    "message": "Revenir à la vidéo"
+  },
+  "section_tldr": {
+    "message": "TL;DR"
+  },
+  "section_ideas": {
+    "message": "Idées principales"
+  },
+  "section_tldr_triage": {
+    "message": "Verdict"
+  },
+  "section_ideas_triage": {
+    "message": "Ce qu’elle donne"
+  },
+  "section_ideas_action": {
+    "message": "À faire"
+  },
+  "section_ideas_quotes": {
+    "message": "Citations"
+  },
+  "section_ideas_figures": {
+    "message": "Chiffres & sources"
+  },
+  "step_transcript": {
+    "message": "Transcript…"
+  },
+  "step_download": {
+    "message": "Téléchargement… $1 %"
+  },
+  "step_prepare": {
+    "message": "Préparation…"
+  },
+  "step_frame": {
+    "message": "Cadrage…"
+  },
+  "step_analyze": {
+    "message": "Analyse $1/$2…"
+  },
+  "step_synthesis": {
+    "message": "Synthèse…"
+  },
+  "step_check": {
+    "message": "Recoupement…"
+  },
+  "error_model_unavailable": {
+    "message": "IA intégrée de Chrome indisponible (Chrome 138+ desktop, ~22 Go de disque, GPU 4+ Go requis)."
+  },
+  "error_element_not_found": {
+    "message": "Élément introuvable sur la page."
+  },
+  "error_no_transcript": {
+    "message": "Pas de transcript disponible pour cette vidéo."
+  },
+  "error_panel_not_loaded": {
+    "message": "Le panneau transcript ne s’est pas chargé."
+  },
+  "error_transcript_too_short": {
+    "message": "Transcript trop court ou incomplet — réessaie dans un instant."
+  },
+  "error_interrupted": {
+    "message": "Le résumé a été interrompu — relance-le."
+  },
+  "format_comedy": {
+    "message": "humour"
+  },
+  "format_tutorial": {
+    "message": "tuto"
+  },
+  "format_essay": {
+    "message": "essai"
+  },
+  "format_interview": {
+    "message": "interview"
+  },
+  "format_news": {
+    "message": "actu"
+  },
+  "format_vlog": {
+    "message": "vlog"
+  },
+  "check_promise_stretched": {
+    "message": "Le titre promet plus que la vidéo ne tient"
+  },
+  "check_promise_unrelated": {
+    "message": "Le titre annonce ce que la vidéo ne traite pas"
+  },
+  "check_sources_vague": {
+    "message": "Sources non nommées"
+  },
+  "check_sources_none": {
+    "message": "Aucune source citée"
+  },
+  "check_sponsor": {
+    "message": "Sponsorisé par $1",
+    "placeholders": {
+      "brand": {
+        "content": "$1"
+      }
+    }
+  },
+  "check_paid": {
+    "message": "Promotion rémunérée"
+  },
+  "check_clean": {
+    "message": "Rien à signaler"
+  },
+  "btn_redo": {
+    "message": "Refaire"
+  },
+  "btn_note": {
+    "message": "Voir la note"
+  },
+  "redo_unavailable": {
+    "message": "Transcript inaccessible depuis ici — refais-le depuis la page YouTube."
+  },
+  "tab_history": {
+    "message": "Historique"
+  },
+  "tab_settings": {
+    "message": "Réglages"
+  },
+  "counter_label": {
+    "message": "pas regardées"
+  },
+  "counter_count": {
+    "message": "$1 résumés",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "counter_count_one": {
+    "message": "1 résumé"
+  },
+  "search_placeholder": {
+    "message": "Chercher un titre, une chaîne, un tag"
+  },
+  "empty_title": {
+    "message": "Rien de récupéré pour l’instant"
+  },
+  "empty_body": {
+    "message": "Ouvre une vidéo YouTube et clique sur Watchless. Le résumé atterrit ici."
+  },
+  "empty_search": {
+    "message": "Aucun résumé ne correspond à « $1 ».",
+    "placeholders": {
+      "query": {
+        "content": "$1"
+      }
+    }
+  },
+  "row_open": {
+    "message": "Ouvrir la vidéo"
+  },
+  "btn_download": {
+    "message": "Télécharger .md"
+  },
+  "btn_delete": {
+    "message": "Supprimer"
+  },
+  "unit_h": {
+    "message": "h"
+  },
+  "unit_min": {
+    "message": "min"
+  },
+  "unit_s": {
+    "message": "s"
+  },
+  "settings_lang": {
+    "message": "Langue du résumé"
+  },
+  "settings_lang_auto": {
+    "message": "Automatique (langue du navigateur)"
+  },
+  "settings_preset": {
+    "message": "Forme du résumé"
+  },
+  "settings_preset_hint": {
+    "message": "Ce qu’on tire d’une vidéo. Le format (essai, tuto…) reste détecté tout seul."
+  },
+  "preset_default": {
+    "message": "TL;DR + idées principales"
+  },
+  "preset_triage": {
+    "message": "Ça vaut le coup ?"
+  },
+  "preset_action": {
+    "message": "Ce qu’il y a à faire"
+  },
+  "preset_quotes": {
+    "message": "Citations"
+  },
+  "preset_figures": {
+    "message": "Chiffres & sources"
+  },
+  "settings_obsidian": {
+    "message": "Obsidian"
+  },
+  "settings_vault": {
+    "message": "Nom du vault"
+  },
+  "settings_folder": {
+    "message": "Dossier"
+  },
+  "settings_folder_hint": {
+    "message": "Laissé vide, les notes arrivent à la racine du vault."
+  },
+  "settings_autoexport": {
+    "message": "Exporter dès qu’un résumé est prêt"
+  },
+  "settings_autoexport_off": {
+    "message": "Jamais — j’exporte à la main"
+  },
+  "settings_autoexport_obsidian": {
+    "message": "Vers Obsidian (demande d’ouvrir l’app à chaque fois)"
+  },
+  "settings_autoexport_download": {
+    "message": "Télécharger le fichier .md"
+  },
+  "settings_danger": {
+    "message": "Données stockées"
+  },
+  "settings_clear": {
+    "message": "Supprimer tous les résumés"
+  },
+  "settings_clear_confirm": {
+    "message": "Supprimer les $1 résumés ? C’est irréversible.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "settings_saved": {
+    "message": "Enregistré"
+  },
+  "vault_missing": {
+    "message": "Nomme d’abord ton vault Obsidian dans les réglages."
+  },
+  "row_forget": {
+    "message": "Supprimer ce résumé"
+  },
+  "summary_captured": {
+    "message": "résumé le $1",
+    "placeholders": {
+      "date": {
+        "content": "$1"
+      }
+    }
+  },
+  "summary_not_found": {
+    "message": "Ce résumé n’existe plus"
+  },
+  "summary_deleted": {
+    "message": "Résumé supprimé"
+  },
+  "summary_gone_hint": {
+    "message": "Ouvre la vidéo sur YouTube et clique sur Watchless pour le refaire."
+  },
+  "settings_open": {
+    "message": "Ouvrir les réglages"
+  },
+  "model_status": {
+    "message": "État du modèle"
+  },
+  "model_ok": {
+    "message": "Prêt. Les résumés tournent sur cette machine, rien n’en sort."
+  },
+  "model_not_ready": {
+    "message": "Watchless n’est pas encore prêt"
+  },
+  "model_weak": {
+    "message": "Cette machine est sous la recommandation ($1). Les résumés tourneront, mais lentement.",
+    "placeholders": {
+      "reasons": {
+        "content": "$1"
+      }
+    }
+  },
+  "model_weak_memory": {
+    "message": "$1 Go de RAM",
+    "placeholders": {
+      "gb": {
+        "content": "$1"
+      }
+    }
+  },
+  "model_weak_cores": {
+    "message": "$1 cœurs",
+    "placeholders": {
+      "cores": {
+        "content": "$1"
+      }
+    }
+  },
+  "model_downloadable": {
+    "message": "Le modèle n’est pas encore téléchargé — quelques Go, une fois. Rien ne part tant que tu ne le lances pas."
+  },
+  "model_unavailable_body": {
+    "message": "Chrome ne peut pas faire tourner le modèle sur cette machine. Rien à activer : les prérequis ci-dessous ne sont pas réunis."
+  },
+  "model_reco": {
+    "message": "Chrome 138+ desktop · 22 Go de disque libre · GPU 4 Go de VRAM · réseau non mesuré. Watchless ajoute : 8 Go de RAM, 4 cœurs."
+  },
+  "model_enable_anyway": {
+    "message": "Activer malgré tout"
+  },
+  "model_download": {
+    "message": "Télécharger le modèle"
+  },
+  "model_recheck": {
+    "message": "Revérifier"
+  },
+  "settings_perf": {
+    "message": "Vitesse"
+  },
+  "settings_concurrency": {
+    "message": "Extraits résumés en même temps"
+  },
+  "settings_concurrency_auto": {
+    "message": "Automatique (selon cette machine)"
+  },
+  "settings_concurrency_hint": {
+    "message": "Seules les vidéos longues sont découpées en extraits. En traiter plus à la fois accélère jusqu’à un point, ensuite le modèle se gêne lui-même."
+  },
+  "settings_prewarm_hint": {
+    "message": "Charger le modèle à l’ouverture d’une vidéo, pas au clic. Gagne quelques secondes, occupe de la mémoire en attendant."
+  },
+  "settings_debug": {
+    "message": "Débug"
+  },
+  "settings_debug_hint": {
+    "message": "Chronomètre chaque phase d’un résumé. Les traces arrivent ici et dans la console."
+  },
+  "debug_empty": {
+    "message": "Aucune trace pour l’instant — résume une vidéo avec ce mode activé."
+  },
+  "debug_clear": {
+    "message": "Vider les traces"
+  },
+  "debug_endtoend": {
+    "message": "De bout en bout"
+  },
+  "debug_video": {
+    "message": "Durée de la vidéo"
+  }
+}

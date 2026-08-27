@@ -1,0 +1,56 @@
+name: Bug report
+description: Something does not work
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Nano failures depend on the machine. Check the requirements table in the
+        README first — Chrome 138+, >22 GB free, >4 GB VRAM, non-metered network.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open https://www.youtube.com/watch?v=...
+        2. Click "Summarize"
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: chrome
+    attributes:
+      label: Chrome version
+      description: From chrome://version
+      placeholder: "141.0.7390.55"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options: [macOS, Windows, Linux, ChromeOS]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Watchless version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: >
+        Errors from the page console and from the service worker
+        (chrome://extensions → Watchless → "service worker").
+      render: text

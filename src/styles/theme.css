@@ -1,0 +1,74 @@
+/* Tokens shared by the popup and the summary sheet. Monospace throughout: tabular numerals
+   keep timecodes from jumping width while the counter rolls. */
+
+:root {
+  /* Yellow inherited from the button injected into YouTube, not re-chosen. The background sits
+       below YouTube's #0f0f0f: these pages are our surface, not a piece of theirs. */
+  --ink: #0b0b0b;
+  --surface: #151515;
+  --line: #242424;
+  --accent: #ffcc00;
+  --text: #ededed;
+  --muted: #949494; /* 5.6:1 on --surface */
+  --danger: #ff8080;
+
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font: 400 13px / 1.5 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.wordmark {
+  display: block;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.btn {
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: none;
+  color: var(--text);
+  font: 400 11px var(--mono);
+  cursor: pointer;
+}
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+/* Destructive: never signalled by color alone, and always set apart from the normal actions. */
+.btn.danger {
+  color: var(--muted);
+}
+.btn.danger:hover {
+  border-color: #ff6b6b;
+  color: var(--danger);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #333;
+}

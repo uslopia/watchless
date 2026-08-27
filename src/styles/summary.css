@@ -1,0 +1,210 @@
+/* The sheet: a summary stops being read inside a 360px popup. Tokens in theme.css. */
+
+body {
+  padding: 44px 24px 120px;
+}
+
+/* The sheet takes the width, the text keeps its measure: ~64 characters per line in monospace,
+   past which the eye loses the next line. */
+.sheet {
+  width: 80vw;
+  margin: 0 auto;
+}
+.tldr,
+.ideas,
+.why,
+.gone {
+  max-width: 64ch;
+}
+
+.sheet > .wordmark {
+  margin-bottom: 28px;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 200;
+}
+.meta s {
+  text-decoration-thickness: 1px;
+  opacity: 0.75;
+}
+.meta .arrow {
+  color: var(--accent);
+  opacity: 0.7;
+  padding: 0 5px;
+}
+.meta .sep {
+  padding: 0 7px;
+  opacity: 0.4;
+}
+
+/* Sticky footer: the actions stay reachable at the bottom of a note of any length, the text
+   scrolls under them. body's padding-bottom reserves the room they take. */
+.actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px 24px 14px;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+.actions .inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  width: 80vw;
+  margin: 0 auto;
+}
+.actions .group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.actions .btn svg {
+  flex: none;
+  opacity: 0.7;
+}
+.actions .btn:hover svg {
+  opacity: 1;
+}
+
+.actions .export {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: none;
+  color: var(--text);
+  font: 400 11px var(--mono);
+  cursor: pointer;
+}
+.actions .export:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.actions .export:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.actions .export option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+h2 {
+  margin: 36px 0 12px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.tldr {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.ideas {
+  margin: 0;
+  padding-left: 20px;
+}
+.ideas li {
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.tags {
+  margin: 32px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 200;
+}
+
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+.checks span {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.why {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 200;
+  line-height: 1.6;
+}
+
+/* Reserved height: the message must not resize the bar when it appears. */
+.status {
+  width: 80vw;
+  margin: 0 auto 8px;
+  min-height: 17px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 200;
+}
+.status a {
+  color: var(--accent);
+}
+
+.gone {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 200;
+  line-height: 1.7;
+}
+.gone strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+@media (max-width: 960px) {
+  body {
+    padding: 32px 20px 120px;
+  }
+  h1 {
+    font-size: 21px;
+  }
+  .actions {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}

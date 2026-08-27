@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea
+    url: https://github.com/uslopia/watchless/discussions
+    about: Ask here before opening an issue for anything that is not a bug.
+  - name: Security vulnerability
+    url: https://github.com/uslopia/watchless/security/advisories/new
+    about: Report privately. Do not open a public issue.

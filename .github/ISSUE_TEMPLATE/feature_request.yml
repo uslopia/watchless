@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest a change
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Watchless summarizes on-device and sends nothing anywhere. Anything that
+        needs a server, an API key, an account, or a shared database is out of
+        scope by design.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that Watchless makes hard today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like instead
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including doing nothing — why is that not enough?
