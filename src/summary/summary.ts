@@ -11,13 +11,6 @@ import type { Checks, Rec } from '../lib/types.ts';
 // a message left in the document would be off-screen when the button is clicked.
 let feedback!: HTMLElement; // `status` would shadow window.status
 
-const id = new URLSearchParams(location.search).get('id') ?? '';
-const key = recordKey(id);
-const record = await getRecord(key);
-
-if (record) render(record);
-else gone(t('summary_not_found'));
-
 // --- Render ------------------------------------------------------------------
 
 function render(record: Rec): void {
@@ -183,3 +176,11 @@ async function toObsidian(record: Rec): Promise<void> {
   }
   location.href = obsidianUri(vault, folder, record.title, note(record));
 }
+
+// --- Entry -------------------------------------------------------------------
+
+// Last in the file, after every const it reaches: the top-level await above would otherwise run
+// render() while ICONS is still uninitialised.
+const record = await getRecord(recordKey(new URLSearchParams(location.search).get('id') ?? ''));
+if (record) render(record);
+else gone(t('summary_not_found'));
