@@ -237,10 +237,26 @@ test('cleanSummary: strips the tail left by a saturated array', () => {
   );
 });
 
+// Same saturation, but the run carries the schema's own numbers back out: without digits in the
+// class, the tail survives the first cut.
+test('cleanSummary: strips a tail that leaks the schema', () => {
+  const junk =
+    "Il a trouvé un métier qu'il aime avec le machinima.',  , 26, 240],  , 240],  , 240],  , 240";
+  assert.equal(
+    cleanSummary({ tldr: 'x', idees: [junk], tags: [] }).idees[0],
+    "Il a trouvé un métier qu'il aime avec le machinima.",
+  );
+});
+
 test('cleanSummary: a normal ending is left alone', () => {
   const summary = {
     tldr: 'Ce que dit la vidéo... et pourquoi !',
-    idees: ['Une idée (avec une parenthèse).', 'Une autre — avec un tiret ?'],
+    idees: [
+      'Une idée (avec une parenthèse).',
+      'Une autre — avec un tiret ?',
+      'Le budget atteint 1 500 000 €.',
+      "L'étude de 2019, p. 42.",
+    ],
     tags: ['climat', 'énergie'],
   };
   assert.deepEqual(cleanSummary(summary), summary);

@@ -249,9 +249,12 @@ export const SUMMARY_SCHEMA = {
 // the entry ends on a run of quotes and commas. maxLength bounds the damage; this removes it.
 // A legitimate ending is one or two punctuation marks, never eight in a row.
 // The captured group keeps the sentence's own full stop, which the run would otherwise swallow.
-const DEGENERATE = /([.!?…]?)[^\p{L}\p{N}]{8,}$/u;
+// Two shapes, because the run sometimes carries the schema back out with it
+// (`.',  , 26, 240],  , 240],`): digits only count as text when nothing already ended the
+// sentence, otherwise a figure at the very end of an entry would be read as noise.
+const DEGENERATE = [/([.!?…])[^\p{L}]{8,}$/u, /([.!?…]?)[^\p{L}\p{N}]{8,}$/u];
 
-const clean = (s: string): string => s.replace(DEGENERATE, '$1').trim();
+const clean = (s: string): string => DEGENERATE.reduce((t, re) => t.replace(re, '$1'), s).trim();
 
 export function cleanSummary(summary: Summary): Summary {
   return {
