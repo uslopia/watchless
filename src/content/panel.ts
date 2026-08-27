@@ -15,8 +15,10 @@ type BtnState = 'idle' | 'ready' | 'busy';
 let shownPct = 0;
 
 export function addButton(onSummarize: () => void): void {
-  waitFor(() => document.querySelector('ytd-watch-metadata #actions'), 10000)
-    .then((actions) => {
+  // Same flex row as Like/Dislike/Share: any other parent aligns the pill on its own baseline,
+  // which puts us ~2px above the native buttons.
+  waitFor(() => document.querySelector('ytd-watch-metadata #top-level-buttons-computed'), 10000)
+    .then((row) => {
       if (!location.pathname.startsWith('/watch')) return; // a previous page's waitFor resolved late
       if (document.getElementById('watchless-btn')) return; // concurrent inits
       const btn = document.createElement('button');
@@ -26,7 +28,7 @@ export function addButton(onSummarize: () => void): void {
                 stroke-width="2.2" stroke-linecap="round"/>
         </svg><span id="watchless-label"></span>`;
       btn.addEventListener('click', onSummarize);
-      actions.appendChild(btn);
+      row.insertBefore(btn, row.firstChild);
       setBtn(state.summary ? 'ready' : 'idle'); // the cache may have answered before injection
     })
     .catch(() => {});
