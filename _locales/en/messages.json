@@ -133,14 +133,11 @@
   "check_clean": {
     "message": "Nothing to flag"
   },
-  "btn_redo": {
-    "message": "Summarize again"
+  "btn_regenerate": {
+    "message": "Generate with…"
   },
   "btn_note": {
     "message": "See note"
-  },
-  "redo_unavailable": {
-    "message": "Transcript unreachable from here — redo it from the YouTube page."
   },
   "tab_history": {
     "message": "History"
@@ -374,5 +371,11 @@
   },
   "debug_video": {
     "message": "Video length"
+  },
+  "debug_quota": {
+    "message": "Synthesis window"
+  },
+  "debug_raw": {
+    "message": "Raw output"
   }
 }

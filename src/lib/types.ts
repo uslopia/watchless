@@ -80,6 +80,18 @@ export interface Rec {
   keywords?: string[] | null;
   preset?: Preset | null;
   checks?: Checks | null;
+  // The other presets already generated for this video. One record per video whatever the
+  // number of styles: the history must not show the same video five times.
+  variants?: Partial<Record<Preset, Variant>>;
+}
+
+// The same run, minus everything that describes the video: a variant only differs by the style.
+export interface Variant {
+  summary: Summary;
+  format: Format | null;
+  checks: Checks | null;
+  lang: string;
+  capturedAt: number;
 }
 
 export interface NoteMeta {
@@ -128,7 +140,20 @@ export type FromWorker =
   | { type: 'download'; loaded: number }
   | { type: 'progress'; step: string; pct: number }
   | { type: 'error'; message: string }
-  | { type: 'done'; summary: Summary; format: Format; checks: Checks | null; timings: Timings };
+  | {
+      type: 'done';
+      summary: Summary;
+      format: Format;
+      checks: Checks | null;
+      timings: Timings;
+      // The synthesis JSON before cleanSummary(), plus how full the session was when it decoded
+      // it. A summary cut mid-sentence has two indistinguishable causes — the model closing the
+      // string early, or DEGENERATE stripping a degenerate tail — and only the raw output tells
+      // them apart. Kept in the message, stored only in debug mode.
+      raw: string;
+      usage: number;
+      quota: number;
+    };
 
 export type Trace = Timings & {
   at: number;
@@ -140,11 +165,15 @@ export type Trace = Timings & {
   chars: number;
   transcriptMs: number;
   endToEndMs: number;
+  // Optional: traces predating the raw capture have none.
+  raw?: string;
+  usage?: number;
+  quota?: number;
 };
 
 export interface Handlers {
   onNote: (btn: HTMLButtonElement) => void;
-  onRedo: (btn: HTMLButtonElement) => void;
+  onPreset: (preset: Preset) => void;
 }
 
 export interface Session {

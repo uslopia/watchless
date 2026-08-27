@@ -1,10 +1,10 @@
 import { downloadMarkdown, obsidianUri } from '../lib/export.ts';
-import { prune, recordKey, toNoteMeta } from '../lib/history.ts';
+import { prune, recordKey, toNoteMeta, variantOf, withVariant } from '../lib/history.ts';
 import { sectionTitle, t } from '../lib/i18n.ts';
 import { buildNote } from '../lib/note.ts';
 import { appendTrace, phasePct } from '../lib/perf.ts';
 import { getAllRecords, getRecord, getSettings } from '../lib/storage.ts';
-import type { FromWorker, Handlers, Meta, Rec, Summary, Trace } from '../lib/types.ts';
+import type { FromWorker, Handlers, Meta, Preset, Rec, Summary, Trace } from '../lib/types.ts';
 import {
   fail,
   addButton as mountButton,
@@ -59,6 +59,7 @@ async function loadCached(v: string | null): Promise<void> {
   state.summary = record.summary;
   state.format = record.format;
   state.checks = record.checks ?? null; // records predating checks have none
+  state.preset = record.preset ?? null; // the style picker excludes the one on display
   setBtn('ready'); // no-op if the model has not rendered the button yet; addButton picks up the state
 }
 
@@ -69,10 +70,10 @@ function addButton() {
 // Everything before the port is opened can still throw: chrome.storage on an orphaned context,
 // runtime.connect on a reloaded extension, waitFor on a page that never renders. Without this the
 // button stays disabled at "Transcript…" with nothing shown and the rejection goes unhandled.
-async function run() {
+async function run(override?: Preset) {
   const v = videoId();
   try {
-    await start(v);
+    await start(v, override);
   } catch (e) {
     if (videoId() !== v) return; // the failure belongs to a video the user has left
     state.port?.disconnect();
@@ -81,17 +82,22 @@ async function run() {
   }
 }
 
-async function start(v: string | null) {
+// `override`: the style picked in the panel, which wins over the saved setting for this run only.
+async function start(v: string | null, override?: Preset) {
   const { debug } = await getSettings({ debug: false });
   const t0 = performance.now();
   setBtn('busy', t('step_transcript'), phasePct('transcript', 1, 1));
   const meta = await getMeta(); // seconds: it refetches the page HTML
   // 'auto' = Chrome's language. Any BCP-47 tag passes: the prompt names the language.
-  const { lang, preset } = await getSettings({ lang: 'auto', preset: 'default' });
+  const { lang, preset: saved } = await getSettings({ lang: 'auto', preset: 'default' });
+  const preset = override ?? saved;
   // A navigation in between already ran reset(); writing state here would resurrect this run on
   // the next video, and state.port being set after the reset means nothing would cancel it.
   if (videoId() !== v) return;
   const outputLang = lang === 'auto' ? chrome.i18n.getUILanguage() : lang;
+  // Held by value: 'done' resumes after awaits, and the styles already generated must be
+  // carried into the new record rather than re-read from a state a navigation may have reset.
+  const previous = state.record;
   state.meta = meta;
   state.lang = outputLang;
   state.preset = preset;
@@ -123,7 +129,8 @@ async function start(v: string | null) {
       state.summary = msg.summary;
       state.format = msg.format;
       state.checks = msg.checks;
-      const record = buildRecord(); // before render(): the panel's actions export from it
+      // before render(): the panel's actions export from it
+      const record = withVariant(previous, buildRecord());
       state.record = record;
       port.disconnect();
       state.port = null;
@@ -175,6 +182,9 @@ function traceRun(
     transcriptMs: Math.round(transcriptMs),
     ...done.timings,
     endToEndMs,
+    raw: done.raw,
+    usage: done.usage,
+    quota: done.quota,
   };
   console.log('[watchless]', trace);
   return appendTrace(trace).catch(() => {});
@@ -254,14 +264,24 @@ function handlersFor(record: Rec): Handlers {
         type: 'openTab',
         url: chrome.runtime.getURL(`src/summary/summary.html?id=${encodeURIComponent(record.id)}`),
       }),
-    onRedo: () => {
+    // A style already generated is one record read away: only a new one costs a run.
+    onPreset: (preset) => {
+      const known = variantOf(record, preset);
+      if (known) {
+        state.summary = known.summary;
+        state.format = known.format;
+        state.checks = known.checks ?? null;
+        state.preset = preset;
+        showSummary();
+        return;
+      }
       state.summary = null;
-      state.record = null;
       state.format = null;
       state.checks = null;
       state.preset = null;
+      // state.record stays: it carries the styles the new record must keep.
       restoreVideo();
-      run();
+      run(preset);
     },
   };
 }

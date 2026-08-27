@@ -83,14 +83,14 @@ test('every key used in the code exists in _locales', () => {
 });
 
 test('no orphan key in _locales', () => {
-  // format_*, check_*, preset_* and composed section_*_* are resolved dynamically
-  // (t('format_' + format), composed badge keys, template presets): covered by the dedicated
-  // tests above.
+  // format_*, check_*, preset_* and section_* are resolved dynamically (t('format_' + format),
+  // composed badge keys, template presets, sectionTitle() and its bare fallback): covered by the
+  // dedicated tests above.
   const dynamic = (k: string) =>
     k.startsWith('format_') ||
     k.startsWith('check_') ||
     k.startsWith('preset_') ||
-    /^section_[a-z]+_[a-z]+$/.test(k);
+    /^section_[a-z]+(_[a-z]+)?$/.test(k);
   const orphans = Object.keys(reference).filter((k) => !dynamic(k) && !used.has(k));
   assert.deepEqual(orphans, []);
 });

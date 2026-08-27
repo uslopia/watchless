@@ -1,11 +1,18 @@
 import { $, el } from '../lib/dom.ts';
 import { agentUri, downloadMarkdown, obsidianUri } from '../lib/export.ts';
-import { formatClock, readingSeconds, recordKey, toNoteMeta } from '../lib/history.ts';
-import { badgeText, t } from '../lib/i18n.ts';
+import {
+  formatClock,
+  presetsOf,
+  readingSeconds,
+  recordKey,
+  toNoteMeta,
+  variantOf,
+} from '../lib/history.ts';
+import { badgeText, sectionTitle, t } from '../lib/i18n.ts';
 import { buildNote } from '../lib/note.ts';
 import { getRecord, getSettings } from '../lib/storage.ts';
 import { checkBadges } from '../lib/summarize.ts';
-import type { Checks, Rec } from '../lib/types.ts';
+import type { Checks, Preset, Rec } from '../lib/types.ts';
 
 // Export feedback lives in the sticky action bar, not in the flow: on a note with twenty ideas
 // a message left in the document would be off-screen when the button is clicked.
@@ -24,8 +31,11 @@ function render(record: Rec): void {
   feedback.setAttribute('aria-live', 'polite');
   content.append(el('h1', null, record.title), metaLine(record), actions(record));
 
-  content.append(el('h2', null, t('section_tldr')), el('p', 'tldr', record.summary.tldr));
-  content.append(el('h2', null, t('section_ideas')));
+  content.append(
+    el('h2', null, sectionTitle('tldr', record.preset)),
+    el('p', 'tldr', record.summary.tldr),
+  );
+  content.append(el('h2', null, sectionTitle('ideas', record.preset)));
   const ideas = el('ul', 'ideas');
   for (const idea of record.summary.idees) ideas.append(el('li', null, idea));
   content.append(ideas, el('p', 'tags', record.summary.tags.join(' · ')));
@@ -68,25 +78,20 @@ function actions(record: Rec): HTMLElement {
   const bar = el('div', 'actions');
   const inner = el('div', 'inner');
   const left = el('div', 'group');
+  // The video first: it is the only action that leaves this page, and the one the reader reaches
+  // for when the summary was not enough.
   left.append(
+    button(t('row_open'), ICONS.open, () => {
+      location.href = record.url;
+    }),
     button(t('btn_copy'), ICONS.copy, (label) => {
       void navigator.clipboard.writeText(note(record)).then(() => {
         label.textContent = t('btn_copied');
       });
     }),
-    button(t('btn_download'), ICONS.download, () => downloadMarkdown(record.title, note(record))),
-    button(t('row_open'), ICONS.open, () => {
-      location.href = record.url;
-    }),
+    ...stylePicker(record),
+    exportPicker(record),
   );
-
-  // A summary cannot be rebuilt from this page: the redo button sends the reader back to the
-  // video, where the transcript is reachable.
-  const redo = button(t('btn_redo'), ICONS.redo, () => {
-    location.href = record.url;
-  });
-  redo.title = t('redo_unavailable');
-  left.append(redo, exportPicker(record));
 
   const right = el('div', 'group');
   const remove = button(t('btn_delete'), ICONS.delete, async () => {
@@ -103,9 +108,27 @@ function actions(record: Rec): HTMLElement {
   return bar;
 }
 
-// One select rather than three buttons: the action row stays readable at a glance.
+// Switching style is free here — all of them live in the same record. Generating a new one is
+// not: it needs the transcript, which only the YouTube page reaches reliably.
+function stylePicker(record: Rec): HTMLElement[] {
+  const presets = presetsOf(record);
+  if (presets.length < 2) return [];
+  const select = el('select', 'export') as HTMLSelectElement;
+  select.setAttribute('aria-label', t('settings_preset'));
+  for (const name of presets) select.append(new Option(t(`preset_${name}`), name));
+  select.value = record.preset ?? 'default';
+  select.addEventListener('change', () => {
+    const picked = variantOf(record, select.value as Preset);
+    if (picked) render(picked);
+  });
+  return [select];
+}
+
+// One select rather than four buttons: the action row stays readable at a glance. The .md file
+// belongs here too — it is an export like the others, not a different kind of action.
 function exportPicker(record: Rec): HTMLElement {
   const targets: [string, () => void][] = [
+    [t('btn_download'), () => downloadMarkdown(record.title, note(record))],
     [t('btn_obsidian'), () => void toObsidian(record)],
     [t('btn_claude'), () => window.open(agentUri('claude', note(record)), '_blank')],
     [t('btn_chatgpt'), () => window.open(agentUri('chatgpt', note(record)), '_blank')],
@@ -127,9 +150,7 @@ function exportPicker(record: Rec): HTMLElement {
 // Stroked 20x20 paths, drawn in currentColor -- same set as the panel's.
 const ICONS = {
   copy: '<path d="M7.5 6.5h8a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M13 4.5a1 1 0 0 0-1-1H4.5a1 1 0 0 0-1 1V12"/>',
-  download: '<path d="M10 3v9"/><path d="M6.5 8.5 10 12l3.5-3.5"/><path d="M4 16.5h12"/>',
   open: '<path d="M11.5 3.5H16.5V8.5"/><path d="M16.5 3.5 9 11"/><path d="M14.5 11.5v5h-11v-11h5"/>',
-  redo: '<path d="M16.5 10a6.5 6.5 0 1 1-2-4.7"/><path d="M16.5 2.5V7h-4.5"/>',
   delete:
     '<path d="M4 6h12"/><path d="M8 6V3.5h4V6"/><path d="M5.8 6l.8 10.1a1 1 0 0 0 1 .9h4.8a1 1 0 0 0 1-.9L14.2 6"/>',
 };
@@ -158,8 +179,8 @@ function gone(message: string): void {
 
 const note = (record: Rec): string =>
   buildNote(toNoteMeta(record), record.summary, record.format, {
-    tldr: t('section_tldr'),
-    ideas: t('section_ideas'),
+    tldr: sectionTitle('tldr', record.preset),
+    ideas: sectionTitle('ideas', record.preset),
   });
 
 async function toObsidian(record: Rec): Promise<void> {

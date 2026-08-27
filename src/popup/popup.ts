@@ -343,8 +343,26 @@ function runDetails(run: Trace): HTMLElement {
     tr.append(el('td', null, t('debug_video')), el('td', null, formatClock(run.duration)));
     table.append(tr);
   }
+  // How full the synthesis session was when it decoded: a window at its ceiling cuts the output
+  // for a reason that has nothing to do with sampling.
+  if (run.quota) {
+    const tr = document.createElement('tr');
+    tr.append(el('td', null, t('debug_quota')), el('td', null, `${run.usage} / ${run.quota}`));
+    table.append(tr);
+  }
   details.append(table);
+  if (run.raw) details.append(rawOutput(run.raw));
   return details;
+}
+
+// The synthesis output before cleanSummary(). A summary ending mid-sentence is either the model
+// closing the JSON string early, or DEGENERATE stripping a degenerate tail — this is the only
+// place the two look different. textContent, never innerHTML: the model wrote this.
+function rawOutput(raw: string): HTMLElement {
+  const box = document.createElement('details');
+  box.className = 'dbg-raw';
+  box.append(el('summary', null, t('debug_raw')), el('pre', null, raw));
+  return box;
 }
 
 async function clearDebug() {

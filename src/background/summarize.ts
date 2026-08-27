@@ -220,6 +220,10 @@ async function summarize(
           summary: cleanSummary(JSON.parse(json)),
           format,
           checks,
+          // Read before the finally below destroys the session. Bounded: debugLog keeps 100 runs.
+          raw: json.slice(0, 4000),
+          usage: finalSession.inputUsage ?? 0,
+          quota: finalSession.inputQuota,
           timings: {
             ...wall,
             chunkMs: perf.chunkMs,

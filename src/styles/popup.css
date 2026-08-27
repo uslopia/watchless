@@ -355,6 +355,22 @@ header .wordmark {
   text-align: right;
   color: var(--muted);
 }
+#debug-log .dbg-raw {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+}
+#debug-log .dbg-raw pre {
+  max-height: 180px;
+  margin: 0;
+  padding: 0 10px 8px;
+  overflow: auto;
+  color: var(--muted);
+  font: 400 10.5px var(--mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 #debug-log .btn {
   margin-top: 8px;
 }

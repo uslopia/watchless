@@ -250,7 +250,20 @@
     sans-serif;
   cursor: pointer;
 }
-#watchless-actions button:hover {
+/* The style picker sits in the same row as the actions and must read as one of them. */
+#watchless-actions select {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 16px;
+  background: #0f0f0f;
+  color: #fff;
+  font:
+    500 13px "Roboto",
+    sans-serif;
+  cursor: pointer;
+}
+#watchless-actions button:hover,
+#watchless-actions select:hover {
   opacity: 0.85;
 }
 #watchless-actions svg {
@@ -280,9 +293,15 @@ html[dark] #watchless-panel h3 {
 html[dark] #watchless-panel li::marker {
   color: #777;
 }
-html[dark] #watchless-actions button {
+html[dark] #watchless-actions button,
+html[dark] #watchless-actions select {
   background: #f1f1f1;
   color: #0f0f0f;
+}
+/* The dropdown itself is drawn by the OS: without this it stays white-on-white in dark mode. */
+html[dark] #watchless-actions option {
+  background: #212121;
+  color: #f1f1f1;
 }
 html[dark] .watchless-format {
   background: #f1f1f1;

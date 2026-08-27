@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   formatClock,
   formatDuration,
+  presetsOf,
   prune,
   readingSeconds,
   recordKey,
@@ -12,6 +13,8 @@ import {
   sortRecords,
   toNoteMeta,
   totalSaved,
+  variantOf,
+  withVariant,
 } from '../src/lib/history.ts';
 import type { Rec, Summary } from '../src/lib/types.ts';
 
@@ -198,4 +201,48 @@ test('recordsFrom: ignores keys that are not records', () => {
     recordsFrom(all).map((r) => r.id),
     ['yt:a'],
   );
+});
+
+// --- Styles ------------------------------------------------------------------
+
+const styled = (preset: Rec['preset'], tldr: string): Rec =>
+  record({ preset, summary: { tldr, idees: [], tags: [] } });
+
+test('withVariant: a second style joins the same record', () => {
+  const merged = withVariant(styled('default', 'un'), styled('quotes', 'deux'));
+  assert.equal(merged.preset, 'quotes');
+  assert.equal(merged.summary.tldr, 'deux');
+  assert.equal(merged.variants?.default?.summary.tldr, 'un');
+  assert.deepEqual(Object.keys(merged.variants ?? {}), ['default']);
+});
+
+test('withVariant: regenerating a known style replaces it, never duplicates it', () => {
+  const two = withVariant(styled('default', 'un'), styled('quotes', 'deux'));
+  const back = withVariant(two, styled('default', 'trois'));
+  assert.equal(back.summary.tldr, 'trois');
+  assert.deepEqual(Object.keys(back.variants ?? {}), ['quotes']);
+  assert.equal(back.variants?.quotes?.summary.tldr, 'deux');
+});
+
+test('withVariant: a record predating presets is filed under default', () => {
+  const legacy = record({ preset: undefined });
+  assert.ok(withVariant(legacy, styled('triage', 'x')).variants?.default);
+});
+
+test('variantOf: the top level, a stored style, or nothing', () => {
+  const merged = withVariant(styled('default', 'un'), styled('quotes', 'deux'));
+  assert.equal(variantOf(merged, 'quotes')?.summary.tldr, 'deux');
+  const older = variantOf(merged, 'default');
+  assert.equal(older?.summary.tldr, 'un');
+  assert.equal(older?.preset, 'default');
+  assert.equal(older?.title, 'Titre'); // a full record: the video's fields come along
+  assert.equal(variantOf(merged, 'figures'), null);
+});
+
+test('presetsOf: every style of the record, once', () => {
+  const merged = withVariant(styled('default', 'un'), styled('quotes', 'deux'));
+  assert.deepEqual(presetsOf(merged), ['quotes', 'default']);
+  // variantOf leaves the displayed style in `variants`: the picker must still list it once.
+  assert.deepEqual(presetsOf(variantOf(merged, 'default') as Rec), ['default', 'quotes']);
+  assert.deepEqual(presetsOf(record()), ['default']);
 });

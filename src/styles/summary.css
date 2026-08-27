@@ -54,13 +54,18 @@ h1 {
   background: color-mix(in srgb, var(--ink) 88%, transparent);
   backdrop-filter: blur(8px);
 }
+/* One wrapping row, delete pushed to the end of the first one: eight controls do not fit on a
+   960px window, and a hard split left/right leaves the delete button floating on its own line. */
 .actions .inner {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 16px;
   width: var(--sheet);
   margin: 0 auto;
+}
+.actions .group:last-child {
+  margin-left: auto;
 }
 .actions .group {
   display: flex;
@@ -161,14 +166,16 @@ h2 {
   line-height: 1.6;
 }
 
-/* Reserved height: the message must not resize the bar when it appears. */
+/* Kept in the DOM even when empty: it is the live region announcing the export feedback. */
 .status {
   width: var(--sheet);
   margin: 0 auto 8px;
-  min-height: 17px;
   color: var(--accent);
   font-size: 12px;
   font-weight: 200;
+}
+.status:empty {
+  margin-bottom: 0;
 }
 .status a {
   color: var(--accent);

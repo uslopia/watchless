@@ -133,14 +133,11 @@
   "check_clean": {
     "message": "Rien à signaler"
   },
-  "btn_redo": {
-    "message": "Refaire"
+  "btn_regenerate": {
+    "message": "Générer avec…"
   },
   "btn_note": {
     "message": "Voir la note"
-  },
-  "redo_unavailable": {
-    "message": "Transcript inaccessible depuis ici — refais-le depuis la page YouTube."
   },
   "tab_history": {
     "message": "Historique"
@@ -374,5 +371,11 @@
   },
   "debug_video": {
     "message": "Durée de la vidéo"
+  },
+  "debug_quota": {
+    "message": "Fenêtre de synthèse"
+  },
+  "debug_raw": {
+    "message": "Sortie brute"
   }
 }

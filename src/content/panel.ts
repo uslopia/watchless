@@ -1,7 +1,8 @@
 // Everything the page is WRITTEN to: the button, the panel, the summary and the action bar.
+import { presetsOf } from '../lib/history.ts';
 import { badgeText, sectionTitle, t } from '../lib/i18n.ts';
-import { checkBadges } from '../lib/summarize.ts';
-import type { Badge, Checks, Handlers, Summary } from '../lib/types.ts';
+import { checkBadges, PRESETS } from '../lib/summarize.ts';
+import type { Badge, Checks, Handlers, Preset, Summary } from '../lib/types.ts';
 import { state } from './state.ts';
 import { esc, waitFor } from './util.ts';
 
@@ -124,16 +125,51 @@ export function renderActions(handlers: Handlers): void {
   const actions = panel().querySelector<HTMLElement>('#watchless-actions');
   if (!actions) return;
   actions.innerHTML = '';
+  // No record until a run has been saved: before that there is nothing to switch between.
+  const known = state.record ? presetsOf(state.record) : [];
   actions.append(
     actionButton(t('btn_note'), ICONS.note, handlers.onNote),
-    actionButton(t('btn_redo'), ICONS.redo, handlers.onRedo),
+    ...notePicker(known, handlers),
+    ...presetPicker(known, handlers),
   );
+}
+
+// The styles already generated for this video are one record read away; the others cost a run.
+// Two pickers rather than one, so switching and generating do not look like the same click.
+function notePicker(known: Preset[], handlers: Handlers): HTMLSelectElement[] {
+  if (known.length < 2) return [];
+  const select = document.createElement('select');
+  select.setAttribute('aria-label', t('settings_preset'));
+  for (const name of known) select.append(new Option(t(`preset_${name}`), name));
+  select.value = state.preset ?? 'default';
+  select.addEventListener('change', () => handlers.onPreset(select.value as Preset));
+  return [select];
+}
+
+// Redoing the same summary produces the same summary: the model does not get smarter on a second
+// pass. The only useful variation is another reading angle, hence a picker over the other presets.
+function presetPicker(known: Preset[], handlers: Handlers): HTMLSelectElement[] {
+  const others = (Object.keys(PRESETS) as Preset[]).filter(
+    (p) => p !== state.preset && !known.includes(p),
+  );
+  if (!others.length) return [];
+  const select = document.createElement('select');
+  // The label is the first option: with no visible <label>, it doubles as the accessible name.
+  select.setAttribute('aria-label', t('btn_regenerate'));
+  select.append(new Option(t('btn_regenerate')));
+  for (const name of others) select.append(new Option(t(`preset_${name}`), name));
+  select.addEventListener('change', () => {
+    const picked = others[select.selectedIndex - 1];
+    // Back to the label: picking a style is an action, not a state to display.
+    select.selectedIndex = 0;
+    if (picked) handlers.onPreset(picked);
+  });
+  return [select];
 }
 
 // Stroked 20x20 paths, drawn in currentColor: one icon set for the two panel actions.
 const ICONS = {
   note: '<path d="M4.5 3h6l5 5v9a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M10.5 3v5h5"/><path d="M7 11.5h6M7 14.5h4"/>',
-  redo: '<path d="M16.5 10a6.5 6.5 0 1 1-2-4.7"/><path d="M16.5 2.5V7h-4.5"/>',
 };
 
 function actionButton(
