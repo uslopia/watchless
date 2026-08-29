@@ -7,6 +7,7 @@ import {
   fetchTranscript,
   isFor,
   json3ToText,
+  ownerHandle,
   transcriptFromHtml,
   videoMeta,
 } from '../src/lib/transcript.ts';
@@ -55,7 +56,7 @@ test('json3: empty response -> empty string', () => {
 });
 
 const metaHtml = (videoId: string) =>
-  `<script>var ytInitialPlayerResponse = {"videoDetails":{"videoId":"${videoId}",` +
+  `<script>var ytInitialPlayerResponse = {"videoDetails":{"videoId":"${videoId}","lengthSeconds":"213",` +
   `"shortDescription":"Une \\"blague\\"\\nsur deux lignes","keywords":["flics","humour","sketch"]},` +
   `"microformat":{"playerMicroformatRenderer":{"externalChannelId":"UCabc","category":"Comedy",` +
   `"publishDate":"2026-08-12T09:00:00-07:00"}}};</script>`;
@@ -63,6 +64,7 @@ const metaHtml = (videoId: string) =>
 test('videoMeta: description, category, keywords, date and channel', () => {
   assert.deepEqual(videoMeta(metaHtml('dQw4w9WgXcQ'), 'dQw4w9WgXcQ'), {
     description: 'Une "blague"\nsur deux lignes',
+    lengthSeconds: 213,
     category: 'Comedy',
     keywords: ['flics', 'humour', 'sketch'],
     published: '2026-08-12',
@@ -92,6 +94,7 @@ test('videoMeta: null when the HTML is another video', () => {
 test('videoMeta: missing fields -> null, never an exception', () => {
   assert.deepEqual(videoMeta('<script>{"videoId":"dQw4w9WgXcQ"}</script>', 'dQw4w9WgXcQ'), {
     description: null,
+    lengthSeconds: null,
     category: null,
     keywords: null,
     published: null,
@@ -123,6 +126,8 @@ test('channelMeta: channel description and quoted keywords', () => {
   assert.deepEqual(channelMeta(channelHtml), {
     channelDescription: 'Sketches et musique',
     channelKeywords: ['humour', 'mister v', 'la police', 'sketch'],
+    channelTitle: 'Mister V',
+    channelExternalId: 'UCabc',
   });
 });
 
@@ -188,4 +193,10 @@ test('fetchTranscript: loads the /watch page then the captions', async () => {
   const { text } = await fetchTranscript('dQw4w9WgXcQ', fetchFn);
   assert.equal(seen[0], 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
   assert.equal((text ?? '').length > 200, true);
+});
+
+test('ownerHandle: the @handle of a watch page', () => {
+  const html = '"ownerProfileUrl":"http://www.youtube.com/@RickAstleyYT","externalChannelId":"UC1"';
+  assert.equal(ownerHandle(html), '@RickAstleyYT');
+  assert.equal(ownerHandle('{"videoId":"dQw4w9WgXcQ"}'), null);
 });

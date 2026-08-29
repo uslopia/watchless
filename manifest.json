@@ -5,7 +5,8 @@
   "description": "__MSG_app_description__",
   "minimum_chrome_version": "138",
   "default_locale": "en",
-  "permissions": ["storage"],
+  "permissions": ["storage", "alarms", "tabGroups"],
+  "host_permissions": ["https://www.youtube.com/*", "http://127.0.0.1:27123/*"],
   "background": {
     "service_worker": "src/background/index.js",
     "type": "module"

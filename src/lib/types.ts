@@ -55,6 +55,7 @@ export interface Meta {
   published: string | null;
   // ...videoMeta()
   description?: string | null;
+  lengthSeconds?: number | null;
   category?: string | null;
   keywords?: string[] | null;
   channelId?: string | null;
@@ -62,6 +63,8 @@ export interface Meta {
   // ...channelMeta()
   channelDescription?: string | null;
   channelKeywords?: string[] | null;
+  channelTitle?: string | null;
+  channelExternalId?: string | null;
 }
 
 export interface Rec {
@@ -106,6 +109,22 @@ export interface NoteMeta {
 }
 
 // chrome.storage.sync
+// A followed channel. `seen` is the watermark: the publication date of the newest entry already
+// taken from its feed. Set to "now" on follow, so following never backfills 15 videos.
+export interface Follow {
+  id: string; // UC...
+  name: string;
+  seen: string; // ISO
+}
+
+// One passive-watch run in flight: the video, the tab opened for it, and when it started. `at`
+// is what tells a run that never reported back from one that is simply long.
+export interface Run {
+  v: string;
+  tabId: number | null;
+  at: number;
+}
+
 export interface Settings {
   lang: string; // 'auto', or any BCP-47 tag
   preset: Preset;
@@ -114,6 +133,7 @@ export interface Settings {
   autoExport: 'off' | 'obsidian' | 'download';
   // Strings, not numbers: the value comes from a <select> and goes to storage.sync as it stands.
   concurrency: 'auto' | '1' | '2' | '3' | '4';
+  pollMinutes: '15' | '30' | '60' | '180' | '360';
   prewarm: boolean;
   debug: boolean;
 }

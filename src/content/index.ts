@@ -1,7 +1,6 @@
-import { downloadMarkdown, obsidianUri } from '../lib/export.ts';
-import { prune, recordKey, toNoteMeta, variantOf, withVariant } from '../lib/history.ts';
-import { sectionTitle, t } from '../lib/i18n.ts';
-import { buildNote } from '../lib/note.ts';
+import { downloadMarkdown, noteFor, obsidianUri } from '../lib/export.ts';
+import { prune, recordKey, variantOf, withVariant } from '../lib/history.ts';
+import { t } from '../lib/i18n.ts';
 import { appendTrace, phasePct } from '../lib/perf.ts';
 import { getAllRecords, getRecord, getSettings } from '../lib/storage.ts';
 import type { FromWorker, Handlers, Meta, Preset, Rec, Summary, Trace } from '../lib/types.ts';
@@ -15,12 +14,40 @@ import {
 } from './panel.ts';
 import { fetchTranscript, getMeta, resetPage, scrapeTranscript } from './scrape.ts';
 import { reset, state } from './state.ts';
-import { videoId } from './util.ts';
+import { videoId, waitFor } from './util.ts';
+
+// A runner tab belongs to the passive-watch scheduler, not to the user: it starts on its own,
+// stays silent — no button, no panel, no dialog — and reports back instead of rendering.
+//
+// Read once at script load and never again: YouTube's SPA router rewrites the hash on navigation,
+// so re-reading it later would flip a running job back into UI mode and pop a dialog open in a
+// background tab. A tab that starts as a runner stays one for its whole life.
+const RUNNER = location.hash === '#watchless';
+
+const report = (message: object): void => {
+  chrome.runtime.sendMessage({ ...message, v: videoId() }).catch(() => {});
+};
+
+// The one failure path for both modes. fail() reaches panel(), which opens a <dialog>: in a
+// background tab that would be an invisible modal nobody can dismiss.
+function abort(message: string): void {
+  if (RUNNER) report({ type: 'jobFailed', reason: message });
+  else fail(message);
+}
 
 document.addEventListener('yt-navigate-finish', init);
 init();
 
+// The video the current init() set up. YouTube fires yt-navigate-finish on the initial load as
+// well, a second or two after this script ran at document_idle: without this guard that event
+// re-enters init() and resets a run that has just started. Harmless interactively — nothing is in
+// flight before the user clicks — and fatal on a runner tab, which starts on its own.
+let mounted: string | null = null;
+
 function init() {
+  const v = videoId();
+  if (location.pathname.startsWith('/watch') && v === mounted) return;
+  mounted = v;
   reset(); // a running summary was aimed at the previous video
   document.getElementById('watchless-btn')?.remove();
   restoreVideo();
@@ -42,6 +69,11 @@ function init() {
   state.modelPort = modelPort;
   modelPort.onMessage.addListener((msg) => {
     if (msg.state !== 'available') return;
+    // No button to mount and nothing to prewarm: the run starts now, so the weights load anyway.
+    if (RUNNER) {
+      run();
+      return;
+    }
     addButton();
     // Loading the weights is a third of a run and starts here rather than on the click. Costs
     // idle memory on every /watch page: the setting exists for machines that would rather not.
@@ -49,6 +81,16 @@ function init() {
       ({ prewarm }) => prewarm && chrome.runtime.sendMessage({ type: 'prewarm' }),
     );
   });
+  // Pause rather than only mute: a background tab that keeps decoding a 2-hour video competes
+  // with the model for the machine it is running on.
+  if (RUNNER) {
+    waitFor(() => document.querySelector('video'), 10000)
+      .then((video) => {
+        video.muted = true;
+        video.pause();
+      })
+      .catch(() => {});
+  }
   loadCached(videoId());
 }
 
@@ -78,7 +120,7 @@ async function run(override?: Preset) {
     if (videoId() !== v) return; // the failure belongs to a video the user has left
     state.port?.disconnect();
     state.port = null;
-    fail(e instanceof Error ? e.message : String(e));
+    abort(e instanceof Error ? e.message : String(e));
   }
 }
 
@@ -112,7 +154,7 @@ async function start(v: string | null, override?: Preset) {
   port.onDisconnect.addListener(() => {
     if (state.port !== port) return;
     state.port = null;
-    fail(t('error_interrupted'));
+    abort(t('error_interrupted'));
     if (debug) diagnose(step, Math.round(performance.now() - t0));
   });
   port.onMessage.addListener((msg: FromWorker) => {
@@ -124,7 +166,7 @@ async function start(v: string | null, override?: Preset) {
       step = msg.step;
       setBtn('busy', msg.step, msg.pct);
     }
-    if (msg.type === 'error') fail(msg.message);
+    if (msg.type === 'error') abort(msg.message);
     if (msg.type === 'done') {
       state.summary = msg.summary;
       state.format = msg.format;
@@ -134,11 +176,16 @@ async function start(v: string | null, override?: Preset) {
       state.record = record;
       port.disconnect();
       state.port = null;
-      showSummary();
+      if (!RUNNER) showSummary();
       // Passed by argument, not via state: these calls resume after an await, and a navigation
-      // in between would have reset state.record to null.
-      save(record); // background: a slow storage must not delay the display
-      autoExport(record);
+      // in between would have reset state.record to null. The export waits for the write: it
+      // re-reads the record from storage, and the scheduler closes the tab on 'jobDone'.
+      // The export is awaited, not fired: on a runner tab the worker closes the tab as soon as
+      // 'jobDone' lands, which would cut an Obsidian write mid-flight.
+      save(record).then(async () => {
+        await autoExport(record);
+        if (RUNNER) report({ type: 'jobDone' });
+      });
       if (debug)
         traceRun(msg, record, transcript, transcriptMs, Math.round(performance.now() - t0));
     }
@@ -226,33 +273,25 @@ async function save(record: Rec): Promise<void> {
   if (dead.length) await chrome.storage.local.remove(dead.map(recordKey));
 }
 
-// From the record, not state.meta: a summary from the cache never scraped the page.
-function note(record: Rec): string {
-  return buildNote(toNoteMeta(record), record.summary, record.format, {
-    tldr: sectionTitle('tldr', record.preset),
-    ideas: sectionTitle('ideas', record.preset),
-  });
-}
-
 async function exportToObsidian(record: Rec): Promise<void> {
   const { vault, folder } = await getSettings({ vault: '', folder: 'Youtube' });
   if (!vault) {
     chrome.runtime.sendMessage({ type: 'openOptions' });
     return;
   }
-  location.href = obsidianUri(vault, folder, record.title, note(record));
+  location.href = obsidianUri(vault, folder, record.title, noteFor(record));
 }
 
 function downloadNote(record: Rec): void {
-  downloadMarkdown(record.title, note(record));
+  downloadMarkdown(record.title, noteFor(record));
 }
 
 // After the display, never before. 'obsidian' triggers the browser's "Open Obsidian?" dialog on
 // every summary — hence the 'off' default.
 async function autoExport(record: Rec): Promise<void> {
   const { autoExport: target } = await getSettings({ autoExport: 'off' as const });
-  if (target === 'obsidian') exportToObsidian(record);
-  if (target === 'download') downloadNote(record);
+  if (target === 'obsidian') await exportToObsidian(record);
+  if (target === 'download') await downloadNote(record);
 }
 
 function handlersFor(record: Rec): Handlers {

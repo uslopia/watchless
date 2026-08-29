@@ -1,10 +1,22 @@
 // Note outputs: Obsidian and a local file. No network output — that is the extension's promise,
 // not an implementation detail.
-import { sanitizeTitle } from './note.ts';
+import { toNoteMeta } from './history.ts';
+import { sectionTitle } from './i18n.ts';
+import { buildNote, sanitizeTitle } from './note.ts';
+import type { Rec } from './types.ts';
 
 type Agent = keyof typeof AGENTS;
 
 const trimSlashes = (s: string): string => s.trim().replace(/^\/+|\/+$/g, '');
+
+// From the record, never from the live page: a summary read back from the cache scraped nothing.
+// Here rather than in each caller — the content script, the summary page and the worker's export
+// queue all need the same bytes, and three copies drift.
+export const noteFor = (record: Rec): string =>
+  buildNote(toNoteMeta(record), record.summary, record.format, {
+    tldr: sectionTitle('tldr', record.preset),
+    ideas: sectionTitle('ideas', record.preset),
+  });
 
 export function obsidianUri(
   vault: string,

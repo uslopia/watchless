@@ -377,5 +377,104 @@
   },
   "debug_raw": {
     "message": "Sortie brute"
+  },
+  "debug_fire": {
+    "message": "Relever maintenant"
+  },
+  "debug_fire_done": {
+    "message": "Relevé lancé — $COUNT$ en attente.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "follows_hint": {
+    "message": "Chaque nouvelle vidéo de ces chaînes est résumée toute seule, puis exportée si l'export auto est actif. Les Shorts sont ignorés."
+  },
+  "follows_placeholder": {
+    "message": "@identifiant ou URL de chaîne"
+  },
+  "follows_add": {
+    "message": "Suivre"
+  },
+  "follows_bad": {
+    "message": "Ni un identifiant ni une URL de chaîne."
+  },
+  "follows_looking": {
+    "message": "Recherche…"
+  },
+  "follows_notfound": {
+    "message": "Chaîne introuvable."
+  },
+  "follows_already": {
+    "message": "Déjà suivie."
+  },
+  "follows_added": {
+    "message": "Suivie. Sa prochaine vidéo sera résumée."
+  },
+  "follows_remove": {
+    "message": "Ne plus suivre $CHANNEL$",
+    "placeholders": {
+      "channel": {
+        "content": "$1",
+        "example": "Mister V"
+      }
+    }
+  },
+  "follows_poll": {
+    "message": "Vérifier les nouvelles vidéos"
+  },
+  "tab_follows": {
+    "message": "Chaînes"
+  },
+  "follows_empty": {
+    "message": "Aucune chaîne suivie. Suivez-en une et sa prochaine vidéo sera résumée toute seule."
+  },
+  "follows_import": {
+    "message": "Importer mes abonnements"
+  },
+  "follows_import_looking": {
+    "message": "Lecture de vos abonnements…"
+  },
+  "follows_import_none": {
+    "message": "Aucun abonnement trouvé. Êtes-vous connecté à YouTube ?"
+  },
+  "follows_import_all": {
+    "message": "Tous vos abonnements sont déjà suivis."
+  },
+  "follows_import_add": {
+    "message": "Suivre les chaînes cochées"
+  },
+  "follows_import_done": {
+    "message": "$COUNT$ chaînes suivies.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "follows_backfill": {
+    "message": "Résumer les vidéos récentes de $CHANNEL$",
+    "placeholders": {
+      "channel": {
+        "content": "$1",
+        "example": "Mister V"
+      }
+    }
+  },
+  "follows_backfill_queued": {
+    "message": "$COUNT$ vidéos en file.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "follows_backfill_none": {
+    "message": "Rien à rattraper : ces vidéos sont déjà résumées."
   }
 }

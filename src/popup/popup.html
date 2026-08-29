@@ -21,6 +21,14 @@
         <button
           type="button"
           role="tab"
+          id="tab-follows"
+          aria-controls="panel-follows"
+          aria-selected="false"
+          data-i18n="tab_follows"
+        ></button>
+        <button
+          type="button"
+          role="tab"
           id="tab-settings"
           aria-controls="panel-settings"
           aria-selected="false"
@@ -46,6 +54,33 @@
 
       <ul id="list"></ul>
       <p id="empty" hidden></p>
+    </section>
+
+    <section id="panel-follows" role="tabpanel" aria-labelledby="tab-follows" hidden>
+      <div class="follow-add">
+        <input id="follow" data-i18n-placeholder="follows_placeholder" autocomplete="off" />
+        <button id="follow-add" type="button" class="btn" data-i18n="follows_add"></button>
+      </div>
+      <button id="subs-import" type="button" class="btn wide" data-i18n="follows_import"></button>
+      <p id="follow-msg" role="status" aria-live="polite"></p>
+
+      <ul id="subs" hidden></ul>
+      <button id="subs-add" type="button" class="btn wide" hidden data-i18n="follows_import_add"></button>
+
+      <ul id="follows"></ul>
+      <p id="follows-empty" hidden data-i18n="follows_empty"></p>
+
+      <p class="hint" data-i18n="follows_hint"></p>
+
+      <label class="field">
+        <span data-i18n="follows_poll"></span><select id="pollMinutes">
+          <option value="15">15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">1 h</option>
+          <option value="180">3 h</option>
+          <option value="360">6 h</option>
+        </select>
+      </label>
     </section>
 
     <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
@@ -102,10 +137,12 @@
       <label class="check"
         ><input type="checkbox" id="debug" /><span data-i18n="settings_debug_hint"></span
       ></label>
+      <button type="button" id="fire" class="btn" data-i18n="debug_fire"></button>
       <div id="debug-log" hidden></div>
 
-      <p id="saved" role="status" aria-live="polite"></p>
     </section>
+
+    <p id="saved" role="status" aria-live="polite"></p>
 
     <script type="module" src="popup.js"></script>
   </body>

@@ -34,7 +34,8 @@ Chrome MV3 extension: summarizes a YouTube video **on-device** through Gemini Na
 - `src/background/` — service worker. `index.ts` routes messages and ports,
   `summarize.ts` drives the Nano sessions.
 - `src/lib/` — pure logic, tested under Node, no `chrome.*` dependency
-  (except `i18n.ts` and `storage.ts`, the two deliberate adapters).
+  (except `i18n.ts`, `storage.ts` and `export.ts`, the three deliberate adapters —
+  `export.ts` only through `i18n.ts`, for the section titles a note needs).
 - `src/popup/`, `src/summary/` — HTML pages (history + settings; full-screen sheet).
 
 **Port protocol** (`ToWorker`/`FromWorker` in `lib/types.ts`) — the one cross-file

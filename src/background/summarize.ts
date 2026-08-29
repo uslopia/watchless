@@ -174,9 +174,11 @@ async function summarize(
   const session = await LanguageModel.create({
     initialPrompts: [{ role: 'system', content: systemPrompt(lang, meta, preset) }],
     monitor(m) {
-      m.addEventListener('downloadprogress', (e) =>
-        port.postMessage({ type: 'download', loaded: e.loaded }),
-      );
+      // The listener outlives the port: a runner tab closes as soon as its job reports back, and
+      // posting into the dead port throws out of an event handler nobody awaits.
+      m.addEventListener('downloadprogress', (e) => {
+        if (live.ok) port.postMessage({ type: 'download', loaded: e.loaded });
+      });
     },
   });
   checkpoint('prepare');

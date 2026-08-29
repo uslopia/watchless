@@ -377,5 +377,104 @@
   },
   "debug_raw": {
     "message": "Raw output"
+  },
+  "debug_fire": {
+    "message": "Poll now"
+  },
+  "debug_fire_done": {
+    "message": "Poll fired — $COUNT$ waiting.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "follows_hint": {
+    "message": "Every new video of these channels is summarized on its own, then exported if auto-export is on. Shorts are ignored."
+  },
+  "follows_placeholder": {
+    "message": "@handle or channel URL"
+  },
+  "follows_add": {
+    "message": "Follow"
+  },
+  "follows_bad": {
+    "message": "Not a channel handle or URL."
+  },
+  "follows_looking": {
+    "message": "Looking up…"
+  },
+  "follows_notfound": {
+    "message": "Channel not found."
+  },
+  "follows_already": {
+    "message": "Already followed."
+  },
+  "follows_added": {
+    "message": "Followed. Its next video will be summarized."
+  },
+  "follows_remove": {
+    "message": "Unfollow $CHANNEL$",
+    "placeholders": {
+      "channel": {
+        "content": "$1",
+        "example": "Mister V"
+      }
+    }
+  },
+  "follows_poll": {
+    "message": "Check for new videos"
+  },
+  "tab_follows": {
+    "message": "Channels"
+  },
+  "follows_empty": {
+    "message": "No channel followed yet. Follow one and its next video gets summarized on its own."
+  },
+  "follows_import": {
+    "message": "Import my subscriptions"
+  },
+  "follows_import_looking": {
+    "message": "Reading your subscriptions…"
+  },
+  "follows_import_none": {
+    "message": "No subscription found. Are you signed in to YouTube?"
+  },
+  "follows_import_all": {
+    "message": "Every subscription of yours is already followed."
+  },
+  "follows_import_add": {
+    "message": "Follow the ticked channels"
+  },
+  "follows_import_done": {
+    "message": "$COUNT$ channels followed.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "follows_backfill": {
+    "message": "Summarize the recent videos of $CHANNEL$",
+    "placeholders": {
+      "channel": {
+        "content": "$1",
+        "example": "Mister V"
+      }
+    }
+  },
+  "follows_backfill_queued": {
+    "message": "$COUNT$ videos queued.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "follows_backfill_none": {
+    "message": "Nothing to catch up on: those videos are already summarized."
   }
 }

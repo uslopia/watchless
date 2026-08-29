@@ -197,6 +197,77 @@ header .wordmark {
   outline-offset: -2px;
 }
 
+/* --- Followed channels -------------------------------------------------------- */
+
+.follow-add {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.follow-add input {
+  flex: 1;
+  min-width: 0;
+}
+.follow-add .btn {
+  flex: none;
+}
+
+#follows {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+/* Plain text, not a link: in the history list the padding lives on .row, which is absent here. */
+#follows .title {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 4px 10px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The import button and its confirm span the panel: they are the row's alternative, not its
+   neighbour. */
+.btn.wide {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+/* Imported subscriptions, ticked by default: the common case is "follow them all, minus two". */
+#subs {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+#subs .check {
+  align-items: center;
+  max-width: none;
+  padding: 7px 0;
+}
+
+/* Catching up shares the × slot but is not destructive: accent on hover, not danger. */
+.replay:hover {
+  color: var(--accent);
+}
+
+#follow-msg:not(:empty) {
+  margin: 0 0 14px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 200;
+}
+
+#follows-empty,
+.hint {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 200;
+  line-height: 1.6;
+}
+
 /* --- Empty state ------------------------------------------------------------- */
 
 #empty {
@@ -221,7 +292,8 @@ header .wordmark {
 
 /* --- Settings ---------------------------------------------------------------- */
 
-#panel-settings {
+#panel-settings,
+#panel-follows {
   padding: 22px 16px 24px;
 }
 
@@ -291,9 +363,12 @@ header .wordmark {
   line-height: 1.6;
 }
 
+/* Outside both panels: the poll interval is saved from the Channels tab, and a flash nobody can
+   see is a flash that lies. */
 #saved {
   min-height: 16px;
-  margin: 14px 0 0;
+  margin: 0;
+  padding: 0 16px 14px;
   color: var(--accent);
   font-size: 11px;
   font-weight: 200;

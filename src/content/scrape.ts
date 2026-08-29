@@ -89,15 +89,27 @@ function transcriptPanel() {
   );
 }
 
-export async function scrapeTranscript() {
-  document.querySelector<HTMLElement>('#description #expand')?.click(); // the button lives in the collapsed description
+// The description section renders well after the page, so the opener is polled and not read
+// once: a runner tab starts scraping seconds after load, where a click on the button only ever
+// happened on a page the user had been sitting on. #expand vanishes once the description is
+// open, so re-clicking it on each tick is a no-op.
+function transcriptOpener(): HTMLElement | null {
+  document.querySelector<HTMLElement>('#description #expand')?.click();
   const openers = [
     ...document.querySelectorAll<HTMLElement>(
       'ytd-video-description-transcript-section-renderer button',
     ),
   ];
-  const opener = openers.find((b) => b.offsetHeight > 0) ?? openers[0];
-  if (!opener) throw new Error(t('error_no_transcript'));
+  return openers.find((b) => b.offsetHeight > 0) ?? openers[0] ?? null;
+}
+
+export async function scrapeTranscript() {
+  let opener: HTMLElement;
+  try {
+    opener = await waitFor(transcriptOpener, 10000);
+  } catch {
+    throw new Error(t('error_no_transcript'));
+  }
   opener.click();
 
   let panel: HTMLElement;
@@ -129,12 +141,14 @@ export async function getMeta() {
   const channel =
     document.querySelector<HTMLAnchorElement>('#owner #channel-name a')?.innerText.trim() ?? '';
   const url = `https://www.youtube.com/watch?v=${videoId()}`;
-  // NaN while the player metadata is not loaded yet -> null, not 0: "unknown duration" and
-  // "0-second video" are not the same thing.
-  const seconds = Math.round(document.querySelector('video')?.duration || 0) || null;
-  const duration = formatClock(seconds);
   const captured = new Date().toISOString().slice(0, 10);
   const extra = videoMeta((await pageHtml()) ?? '', videoId());
+  // NaN while the player metadata is not loaded yet -> null, not 0: "unknown duration" and
+  // "0-second video" are not the same thing. The blob's lengthSeconds covers the case where the
+  // player never loads at all, which is the norm in a background tab.
+  const seconds =
+    Math.round(document.querySelector('video')?.duration || 0) || extra?.lengthSeconds || null;
+  const duration = formatClock(seconds);
   const channelInfo = await channelExtra(extra?.channelId);
   // The DOM <meta> lives in the initial load's <head>: fallback only.
   const published =

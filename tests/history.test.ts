@@ -203,6 +203,23 @@ test('recordsFrom: ignores keys that are not records', () => {
   );
 });
 
+// The worker namespaces its own state under the same prefix. Without the shape check these reach
+// savedSeconds() as records and crash the popup on open.
+test('recordsFrom: ignores the worker keys sharing the wl: prefix', () => {
+  const all = {
+    'wl:yt:a': record({ id: 'yt:a' }),
+    'wl:queue': [{ v: 'dQw4w9WgXcQ', tries: 0 }],
+    'wl:follows': [{ id: 'UC123', name: 'Chaine' }],
+    'wl:lease': { v: 'dQw4w9WgXcQ', tabId: 7 },
+    'wl:export': [],
+    'wl:null': null,
+  };
+  assert.deepEqual(
+    recordsFrom(all).map((r) => r.id),
+    ['yt:a'],
+  );
+});
+
 // --- Styles ------------------------------------------------------------------
 
 const styled = (preset: Rec['preset'], tldr: string): Rec =>

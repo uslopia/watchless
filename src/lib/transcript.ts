@@ -8,6 +8,9 @@ export type FetchFn = (url: string) => Promise<{
 
 interface VideoExtra {
   description: string | null;
+  // The blob's own duration. The DOM <video> reports NaN until the player has loaded metadata —
+  // which in a background tab may be never — so this is the reliable source, not the fallback.
+  lengthSeconds: number | null;
   category: string | null;
   keywords: string[] | null;
   published: string | null;
@@ -18,6 +21,10 @@ interface VideoExtra {
 export interface ChannelExtra {
   channelDescription: string | null;
   channelKeywords: string[] | null;
+  // Prefixed like the rest: getMeta() spreads this object into Meta, where a bare `title` or `id`
+  // would clobber the video's own. The follow list reads these two off a channel page.
+  channelTitle: string | null;
+  channelExternalId: string | null;
 }
 
 interface TranscriptResult {
@@ -70,6 +77,7 @@ export function videoMeta(html: string, videoId: string | null): VideoExtra | nu
   if (!isFor(html, videoId)) return null;
   return {
     description: field(html, 'shortDescription', JSON_STRING),
+    lengthSeconds: Number(field(html, 'lengthSeconds', JSON_STRING)) || null,
     category: field(html, 'category', JSON_STRING),
     keywords: field(html, 'keywords', `\\[(?:${JSON_STRING},?)*\\]`)?.slice(0, 8) ?? null,
     published: field(html, 'publishDate', JSON_STRING)?.slice(0, 10) ?? null,
@@ -100,8 +108,16 @@ export function channelMeta(html: string): ChannelExtra | null {
         ?.match(/"[^"]+"|\S+/g)
         ?.map((s: string) => s.replaceAll('"', ''))
         .slice(0, 10) ?? null,
+    channelTitle: field(seg, 'title', JSON_STRING),
+    channelExternalId: field(seg, 'externalId', JSON_STRING),
   };
 }
+
+// The @handle of a watch page's channel, for the popup's follow field. `ownerProfileUrl` and not
+// `externalChannelId`: both identify the channel, but a handle is what the user recognises in a
+// text field — the UC id is opaque. The caller falls back to videoMeta() when it is absent.
+export const ownerHandle = (html: string): string | null =>
+  html.match(/"ownerProfileUrl":"https?:\/\/(?:www\.)?youtube\.com\/(@[\w.-]+)"/)?.[1] ?? null;
 
 // Three distinct outcomes, hence an object rather than an ambiguous null:
 //   { text }            transcript recovered

@@ -1,15 +1,7 @@
 import { $, el } from '../lib/dom.ts';
-import { agentUri, downloadMarkdown, obsidianUri } from '../lib/export.ts';
-import {
-  formatClock,
-  presetsOf,
-  readingSeconds,
-  recordKey,
-  toNoteMeta,
-  variantOf,
-} from '../lib/history.ts';
+import { agentUri, downloadMarkdown, noteFor, obsidianUri } from '../lib/export.ts';
+import { formatClock, presetsOf, readingSeconds, recordKey, variantOf } from '../lib/history.ts';
 import { badgeText, sectionTitle, t } from '../lib/i18n.ts';
-import { buildNote } from '../lib/note.ts';
 import { getRecord, getSettings } from '../lib/storage.ts';
 import { checkBadges } from '../lib/summarize.ts';
 import type { Checks, Preset, Rec } from '../lib/types.ts';
@@ -85,7 +77,7 @@ function actions(record: Rec): HTMLElement {
       location.href = record.url;
     }),
     button(t('btn_copy'), ICONS.copy, (label) => {
-      void navigator.clipboard.writeText(note(record)).then(() => {
+      void navigator.clipboard.writeText(noteFor(record)).then(() => {
         label.textContent = t('btn_copied');
       });
     }),
@@ -128,10 +120,10 @@ function stylePicker(record: Rec): HTMLElement[] {
 // belongs here too — it is an export like the others, not a different kind of action.
 function exportPicker(record: Rec): HTMLElement {
   const targets: [string, () => void][] = [
-    [t('btn_download'), () => downloadMarkdown(record.title, note(record))],
+    [t('btn_download'), () => downloadMarkdown(record.title, noteFor(record))],
     [t('btn_obsidian'), () => void toObsidian(record)],
-    [t('btn_claude'), () => window.open(agentUri('claude', note(record)), '_blank')],
-    [t('btn_chatgpt'), () => window.open(agentUri('chatgpt', note(record)), '_blank')],
+    [t('btn_claude'), () => window.open(agentUri('claude', noteFor(record)), '_blank')],
+    [t('btn_chatgpt'), () => window.open(agentUri('chatgpt', noteFor(record)), '_blank')],
   ];
   const select = el('select', 'export') as HTMLSelectElement;
   // The label is the first option: with no visible <label>, it doubles as the accessible name.
@@ -177,12 +169,6 @@ function gone(message: string): void {
 
 // --- Export ------------------------------------------------------------------
 
-const note = (record: Rec): string =>
-  buildNote(toNoteMeta(record), record.summary, record.format, {
-    tldr: sectionTitle('tldr', record.preset),
-    ideas: sectionTitle('ideas', record.preset),
-  });
-
 async function toObsidian(record: Rec): Promise<void> {
   const { vault, folder } = await getSettings({ vault: '', folder: 'Youtube' });
   if (!vault) {
@@ -195,7 +181,7 @@ async function toObsidian(record: Rec): Promise<void> {
     feedback.append(link);
     return;
   }
-  location.href = obsidianUri(vault, folder, record.title, note(record));
+  location.href = obsidianUri(vault, folder, record.title, noteFor(record));
 }
 
 // --- Entry -------------------------------------------------------------------

@@ -1,4 +1,11 @@
 import { $, el } from '../lib/dom.ts';
+import {
+  channelFromPath,
+  channelUrl,
+  feedUrl,
+  parseFeed,
+  parseSubscriptions,
+} from '../lib/feed.ts';
 import { weakReasons } from '../lib/hardware.ts';
 import {
   formatClock,
@@ -10,9 +17,10 @@ import {
   totalSaved,
 } from '../lib/history.ts';
 import { t } from '../lib/i18n.ts';
-import { getAllRecords, getSettings, getTraces } from '../lib/storage.ts';
+import { getAllRecords, getFollows, getSettings, getTraces, setFollows } from '../lib/storage.ts';
 import { PRESETS } from '../lib/summarize.ts';
-import type { Rec, Settings, Trace } from '../lib/types.ts';
+import { channelMeta, ownerHandle, videoMeta } from '../lib/transcript.ts';
+import type { Follow, Rec, Settings, Trace } from '../lib/types.ts';
 
 const UNITS = { h: t('unit_h'), min: t('unit_min'), s: t('unit_s') };
 
@@ -210,6 +218,7 @@ const SETTINGS: Omit<Settings, 'debug' | 'prewarm'> = {
   folder: 'Youtube',
   autoExport: 'off',
   concurrency: 'auto',
+  pollMinutes: '60',
 };
 
 $('preset').append(...Object.keys(PRESETS).map((name) => new Option(t(`preset_${name}`), name)));
@@ -232,6 +241,183 @@ for (const id of Object.keys(SETTINGS)) {
       flash(t('settings_saved'));
     }, 300);
   });
+}
+
+// --- Followed channels -------------------------------------------------------
+// The channel page is fetched straight from here: the popup is an extension page, and the
+// manifest now holds the youtube.com host permission, so no round trip through the worker.
+
+let follows: Follow[] = [];
+
+function renderFollows(): void {
+  const list = $('follows');
+  list.replaceChildren();
+  $('follows-empty').hidden = follows.length > 0;
+  for (const follow of follows) {
+    const li = el('li', 'item');
+    li.append(el('span', 'title', follow.name));
+
+    const back = el('button', 'forget replay', '\u21ba') as HTMLButtonElement;
+    back.type = 'button';
+    back.title = t('follows_backfill', follow.name);
+    back.setAttribute('aria-label', t('follows_backfill', follow.name));
+    back.addEventListener('click', () => void backfill(follow, back));
+    li.append(back);
+
+    const forget = el('button', 'forget', '\u00d7');
+    forget.setAttribute('type', 'button');
+    forget.title = t('follows_remove', follow.name);
+    forget.setAttribute('aria-label', t('follows_remove', follow.name));
+    forget.addEventListener('click', async () => {
+      follows = follows.filter((f) => f.id !== follow.id);
+      await setFollows(follows);
+      renderFollows();
+    });
+    li.append(forget);
+    list.append(li);
+  }
+}
+
+async function addFollow(): Promise<void> {
+  const input = $<HTMLInputElement>('follow');
+  const url = channelUrl(input.value);
+  const msg = $('follow-msg');
+  if (!url) {
+    msg.textContent = t('follows_bad');
+    return;
+  }
+  msg.textContent = t('follows_looking');
+  const meta = await fetch(url)
+    .then((r) => (r.ok ? r.text() : ''))
+    .then(channelMeta)
+    .catch(() => null);
+  const id = meta?.channelExternalId;
+  if (!id) {
+    msg.textContent = t('follows_notfound');
+    return;
+  }
+  if (follows.some((f) => f.id === id)) {
+    msg.textContent = t('follows_already');
+    return;
+  }
+  // `seen` is now, never the feed's oldest entry: following a channel must not summarize its
+  // whole back catalogue.
+  follows = [...follows, { id, name: meta.channelTitle ?? id, seen: new Date().toISOString() }];
+  await setFollows(follows);
+  input.value = '';
+  msg.textContent = t('follows_added');
+  renderFollows();
+}
+
+$('follow-add').addEventListener('click', () => void addFollow());
+$('follow').addEventListener('keydown', (e) => {
+  if ((e as KeyboardEvent).key === 'Enter') void addFollow();
+});
+
+// Backfill: the feed's own entries, minus what is already summarized. The watermark is left
+// alone — it tracks what the poll has taken going forward, and catching up looks backwards.
+// The feed caps itself at 15 entries, so there is no other bound to enforce.
+async function backfill(follow: Follow, btn: HTMLButtonElement): Promise<void> {
+  const msg = $('follow-msg');
+  btn.disabled = true;
+  msg.textContent = t('follows_looking');
+  const entries = await fetch(feedUrl(follow.id))
+    .then((r) => (r.ok ? r.text() : ''))
+    .then(parseFeed)
+    .catch(() => []);
+  btn.disabled = false;
+  const known = new Set(records.map((r) => r.id));
+  const ids = entries.map((e) => e.v).filter((v) => !known.has(`yt:${v}`));
+  if (!ids.length) {
+    msg.textContent = t('follows_backfill_none');
+    return;
+  }
+  // The worker owns the queue: it is the only context that survives this popup closing.
+  chrome.runtime.sendMessage({ type: 'enqueue', ids });
+  msg.textContent = t('follows_backfill_queued', ids.length);
+}
+
+// --- Subscriptions import ----------------------------------------------------
+// No API and no OAuth: the subscriptions page carries them, and the popup's fetch goes out with
+// the user's YouTube cookies (an extension request under a host permission is exempt from
+// SameSite). Signed out, the page comes back without a single channel — hence the distinct
+// message rather than a silent empty list.
+
+let picked: { id: string; name: string }[] = [];
+
+async function importSubs(): Promise<void> {
+  const msg = $('follow-msg');
+  msg.textContent = t('follows_import_looking');
+  const html = await fetch('https://www.youtube.com/feed/channels', { credentials: 'include' })
+    .then((r) => (r.ok ? r.text() : ''))
+    .catch(() => '');
+  const all = parseSubscriptions(html);
+  const known = new Set(follows.map((f) => f.id));
+  picked = all.filter((c) => !known.has(c.id));
+
+  const list = $('subs');
+  list.replaceChildren();
+  list.hidden = picked.length === 0;
+  $('subs-add').hidden = picked.length === 0;
+  if (!picked.length) {
+    msg.textContent = all.length ? t('follows_import_all') : t('follows_import_none');
+    return;
+  }
+  msg.textContent = '';
+  for (const channel of picked) {
+    const li = el('li', 'item');
+    const label = el('label', 'check');
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = true;
+    box.value = channel.id;
+    label.append(box, el('span', null, channel.name));
+    li.append(label);
+    list.append(li);
+  }
+}
+
+async function addSubs(): Promise<void> {
+  const chosen = new Set(
+    [...$('subs').querySelectorAll<HTMLInputElement>('input:checked')].map((b) => b.value),
+  );
+  // Same rule as addFollow(): `seen` is now, so importing 40 channels does not queue 600 videos.
+  const seen = new Date().toISOString();
+  const added = picked.filter((c) => chosen.has(c.id)).map((c) => ({ ...c, seen }));
+  follows = [...follows, ...added];
+  await setFollows(follows);
+  $('subs').replaceChildren();
+  $('subs').hidden = true;
+  $('subs-add').hidden = true;
+  $('follow-msg').textContent = t('follows_import_done', added.length);
+  renderFollows();
+}
+
+$('subs-import').addEventListener('click', () => void importSubs());
+$('subs-add').addEventListener('click', () => void addSubs());
+
+// The tab the popup opened over. A channel page names its channel in the path; a /watch page does
+// not, and only the video's own HTML says whose it is. Prefilled, never followed: the user still
+// has to click Follow.
+async function prefillFollow(): Promise<void> {
+  const input = $<HTMLInputElement>('follow');
+  // tab.url is only populated because the manifest holds the youtube.com host permission; no
+  // "tabs" permission, and nothing to read on any other site.
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const url = tab?.url ?? '';
+  const fromPath = channelFromPath(url);
+  if (fromPath) {
+    input.value = fromPath;
+    return;
+  }
+  const v = /^https:\/\/(?:www\.)?youtube\.com\/watch\?.*\bv=([\w-]{11})/.exec(url)?.[1];
+  if (!v) return;
+  const html = await fetch(url)
+    .then((r) => (r.ok ? r.text() : ''))
+    .catch(() => '');
+  // The handle when the page gives one, the UC id otherwise: channelUrl() takes both.
+  const owner = ownerHandle(html) ?? videoMeta(html, v)?.channelId;
+  if (owner && !input.value) input.value = owner; // the user may have typed during the fetch
 }
 
 $('clear').addEventListener('click', async () => {
@@ -390,6 +576,14 @@ $('debug').addEventListener('change', async () => {
   renderDebug();
 });
 
+// Hand crank for the poller: runs a poll and a queue step now instead of at the next alarm.
+// The worker answers with what is left waiting, which is the only observable a poll has.
+$('fire').addEventListener('click', () => {
+  chrome.runtime.sendMessage({ type: 'pollNow' }, (res: { queued?: number } | undefined) => {
+    flash(t('debug_fire_done', res?.queued ?? 0));
+  });
+});
+
 $('prewarm').addEventListener('change', async () => {
   await chrome.storage.sync.set({ prewarm: $<HTMLInputElement>('prewarm').checked });
   flash(t('settings_saved'));
@@ -408,3 +602,7 @@ renderCounter();
 renderList();
 renderModelStatus();
 renderDebug();
+
+follows = await getFollows();
+renderFollows();
+prefillFollow();

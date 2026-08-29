@@ -11,9 +11,14 @@ export const recordKey = (id: string): string => KEY_PREFIX + id;
 // One key per record rather than a single array: reading a video's cache loads only it, and two
 // simultaneous writers (tab + popup) cannot clobber each other through a read-modify-write. The
 // price is this filter over a storage.get(null).
+// The `summary` check is not defensive padding: the prefix is also the worker's namespace
+// (wl:queue, wl:follows, wl:lease, wl:export), and those are arrays and bare objects. Without it
+// they reach savedSeconds() as records and crash the popup on open.
 export const recordsFrom = (all: Record<string, unknown>): Rec[] =>
   Object.entries(all)
-    .filter(([key]) => key.startsWith(KEY_PREFIX))
+    .filter(
+      ([key, r]) => key.startsWith(KEY_PREFIX) && !!r && typeof r === 'object' && 'summary' in r,
+    )
     .map(([, record]) => record as Rec);
 
 // --- Styles ------------------------------------------------------------------
