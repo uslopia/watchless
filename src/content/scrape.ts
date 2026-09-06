@@ -14,11 +14,27 @@ import { videoId, waitFor } from './util.ts';
 let fastPath = true;
 
 export async function fetchTranscript() {
+  return (await pageTranscript()) ?? (await workerTranscript());
+}
+
+async function pageTranscript() {
   if (!fastPath) return null;
   try {
     return await captionTranscript();
   } catch {
     return null; // network, broken JSON, markup change: fall back to scraping
+  }
+}
+
+// The page has nothing left to offer — no caption track in the blob, or timedtext refused for
+// this profile. The worker can still ask InnerTube as a non-WEB client, which the page itself
+// cannot: its fetches are same-origin and carry the profile's cookies. Panel scraping stays the
+// last resort, and the only one that still needs a rendered page.
+async function workerTranscript(): Promise<string | null> {
+  try {
+    return await chrome.runtime.sendMessage({ type: 'transcript', v: videoId() });
+  } catch {
+    return null; // worker gone, or the extension was reloaded under the page
   }
 }
 
@@ -81,10 +97,22 @@ async function channelExtra(channelId: string | null | undefined) {
 
 // YouTube A/B tests several transcript panels (legacy and the modern "In this video") with
 // incompatible markup: target the open panel with the most text, not an element name.
+//
+// "Open" is proven by a visibility attribute, not by geometry: a hidden runner tab gets no
+// requestAnimationFrame, so the panel-open animation may never reach a measurable height.
+// offsetHeight stays as the fallback in case a markup change drops the attribute — degrade to
+// today's behaviour, not to "every panel matches".
+function expanded(p: HTMLElement): boolean {
+  const visibility = p.getAttribute('visibility');
+  return visibility === null
+    ? p.offsetHeight > 200
+    : visibility === 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED';
+}
+
 function transcriptPanel() {
   return (
     [...document.querySelectorAll<HTMLElement>('ytd-engagement-panel-section-list-renderer')]
-      .filter((p) => p.offsetHeight > 200 && (p.textContent ?? '').trim().length > 200)
+      .filter((p) => expanded(p) && (p.textContent ?? '').trim().length > 200)
       .sort((a, b) => (b.textContent ?? '').length - (a.textContent ?? '').length)[0] ?? null
   );
 }
@@ -100,6 +128,9 @@ function transcriptOpener(): HTMLElement | null {
       'ytd-video-description-transcript-section-renderer button',
     ),
   ];
+  // offsetHeight > 0 is the same layout dependency a hidden tab starves — but unlike the panel,
+  // the fallback absorbs it: a button that merely exists is still clickable, so a runner whose
+  // page never laid out simply clicks the first opener rather than failing to find one.
   return openers.find((b) => b.offsetHeight > 0) ?? openers[0] ?? null;
 }
 
@@ -108,7 +139,8 @@ export async function scrapeTranscript() {
   try {
     opener = await waitFor(transcriptOpener, 10000);
   } catch {
-    throw new Error(t('error_no_transcript'));
+    // `stage` lets a runner's abort() name the step that failed — a hidden tab cannot say it itself.
+    throw Object.assign(new Error(t('error_no_transcript')), { stage: 'opener' });
   }
   opener.click();
 
@@ -116,7 +148,7 @@ export async function scrapeTranscript() {
   try {
     panel = await waitFor(transcriptPanel, 10000);
   } catch {
-    throw new Error(t('error_panel_not_loaded'));
+    throw Object.assign(new Error(t('error_panel_not_loaded')), { stage: 'panel' });
   }
 
   // textContent, not innerText: the latter depends on layout and triggers a sync reflow per node.

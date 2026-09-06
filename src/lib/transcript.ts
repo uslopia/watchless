@@ -1,6 +1,9 @@
 type Json3 = { events?: { segs?: { utf8?: string }[] }[] };
 
-export type FetchFn = (url: string) => Promise<{
+export type FetchFn = (
+  url: string,
+  init?: RequestInit,
+) => Promise<{
   ok: boolean;
   text(): Promise<string>;
   json(): Promise<Json3>;
@@ -37,15 +40,14 @@ interface TranscriptResult {
 export const isFor = (html: string, videoId: string | null): boolean =>
   html.match(/"videoId":"([\w-]{11})"/)?.[1] === videoId;
 
+// The first track's baseUrl. Scoped by indexOf and read one string at a time rather than
+// JSON.parse of the array: a track's name is `{"runs":[{"text":"English"}]}` on the InnerTube
+// shape, so a non-greedy match up to `}]` cuts the array in half.
 export function captionUrl(html: string, videoId: string | null): string | null {
   if (!isFor(html, videoId)) return null;
-  const m = html.match(/"captionTracks":(\[.*?\}\])/);
-  if (!m) return null;
-  try {
-    return JSON.parse(m[1] ?? '[]')[0]?.baseUrl ?? null;
-  } catch {
-    return null;
-  }
+  const i = html.indexOf('"captionTracks":[');
+  if (i < 0) return null;
+  return field(html.slice(i, i + 2000), 'baseUrl', JSON_STRING);
 }
 
 export function json3ToText(json: Json3): string {
@@ -137,10 +139,66 @@ export async function transcriptFromHtml(
   return { text, blocked: false };
 }
 
+// Headless transcript, yt-dlp's route (its extractor/youtube/_base.py INNERTUBE_CLIENTS table).
+// The watch page answers as the WEB client, whose caption URLs now carry the `exp=xpe` experiment
+// and need a `pot` token only YouTube's own player can mint. The same player endpoint asked as a
+// non-WEB client hands back plain signed URLs — signed with `ip=0.0.0.0`, so the answer is not
+// even bound to the caller. VISIONOS is the client yt-dlp defaults to: no JS player, no PO token
+// policy. When Google closes it, yt-dlp's table names the next one.
+//
+// `prettyPrint=false` is not cosmetic: the parsers above read the response as text, and the
+// pretty-printed form spaces out the `"key":"value"` pairs they match on.
+const PLAYER_URL = 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false';
+const WATCH_URL = 'https://www.youtube.com/watch';
+const VISIONOS_CLIENT_NUMBER = '101';
+const VISIONOS_USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15';
+
+const VISIONOS = {
+  clientName: 'VISIONOS',
+  clientVersion: '1.02',
+  deviceMake: 'Apple',
+  deviceModel: 'RealityDevice17,1',
+  userAgent: VISIONOS_USER_AGENT,
+  osName: 'visionOS',
+  osVersion: '26.5.23O471',
+  hl: 'en',
+  timeZone: 'UTC',
+  utcOffsetMinutes: 0,
+};
+
+// Anonymous on purpose — no cookie, no auth header. Age-gated and members-only videos are the
+// price; in exchange the call cannot inherit the signed-in profile's experiments.
 export async function fetchTranscript(
   videoId: string | null,
   fetchFn: FetchFn,
 ): Promise<TranscriptResult> {
-  const html = await fetchFn(`https://www.youtube.com/watch?v=${videoId}`).then((r) => r.text());
-  return transcriptFromHtml(html, videoId, fetchFn);
+  // YouTube rejects a context-free player call as a bot. Prime an anonymous visitor first, then
+  // carry only its public id into the VISIONOS request — never the profile's account cookies.
+  const watch = await fetchFn(`${WATCH_URL}?v=${videoId}&hl=en`, { credentials: 'omit' }).then(
+    (r) => r.text(),
+  );
+  const visitorData = field(watch, 'VISITOR_DATA', JSON_STRING);
+  if (!visitorData) return { text: null, blocked: false };
+
+  const res = await fetchFn(PLAYER_URL, {
+    method: 'POST',
+    credentials: 'omit',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Youtube-Client-Name': VISIONOS_CLIENT_NUMBER,
+      'X-Youtube-Client-Version': VISIONOS.clientVersion,
+      'X-Goog-Visitor-Id': visitorData,
+    },
+    body: JSON.stringify({
+      context: { client: { ...VISIONOS, visitorData } },
+      videoId,
+      playbackContext: {
+        contentPlaybackContext: { html5Preference: 'HTML5_PREF_WANTS' },
+      },
+      contentCheckOk: true,
+      racyCheckOk: true,
+    }),
+  });
+  return transcriptFromHtml(await res.text(), videoId, fetchFn);
 }

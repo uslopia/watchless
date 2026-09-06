@@ -25,6 +25,19 @@ test('extracts the baseUrl of the first track', () => {
   );
 });
 
+// The InnerTube player response names a track with runs, not simpleText: the `}]` that closes
+// them used to end the capture two thirds of a track early.
+test('extracts the baseUrl through a name that contains a closing bracket', () => {
+  const innertube =
+    `{"videoId":"dQw4w9WgXcQ","captions":{"playerCaptionsTracklistRenderer":{"captionTracks":` +
+    `[{"baseUrl":"https://www.youtube.com/api/timedtext?v=dQw4w9WgXcQ\\u0026lang=en",` +
+    `"name":{"runs":[{"text":"English"}]},"vssId":".en","languageCode":"en"}]}}}`;
+  assert.equal(
+    captionUrl(innertube, 'dQw4w9WgXcQ'),
+    'https://www.youtube.com/api/timedtext?v=dQw4w9WgXcQ&lang=en',
+  );
+});
+
 test('null when the HTML is another video (stale inline script after an SPA navigation)', () => {
   assert.equal(captionUrl(html('dQw4w9WgXcQ'), 'aBcDeFgHiJk'), null);
 });
@@ -183,15 +196,32 @@ test('transcriptFromHtml: HTTP error response -> blocked', async () => {
   });
 });
 
-test('fetchTranscript: loads the /watch page then the captions', async () => {
+test('fetchTranscript: initializes an anonymous visitor before asking the non-WEB player', async () => {
   const seen: string[] = [];
-  const fetchFn = asFetch(async (url: string) => {
+  const fetchFn = asFetch(async (url: string, init?: RequestInit) => {
     seen.push(url);
-    if (url.includes('/watch')) return { text: async () => html('dQw4w9WgXcQ') };
-    return okResponse(captions(100));
+    if (url.includes('/watch')) {
+      assert.equal(init?.credentials, 'omit');
+      return { text: async () => '{"VISITOR_DATA":"visitor-123"}' };
+    }
+    if (!url.includes('/player')) return okResponse(captions(100));
+    assert.equal(init?.method, 'POST');
+    assert.equal(init?.credentials, 'omit');
+    assert.equal(new Headers(init?.headers).get('X-Youtube-Client-Name'), '101');
+    assert.equal(new Headers(init?.headers).get('X-Goog-Visitor-Id'), 'visitor-123');
+    const body = JSON.parse(String(init?.body));
+    // The whole point of the route: WEB is the client whose caption URLs need a PO token.
+    assert.equal(body.context.client.clientName, 'VISIONOS');
+    assert.equal(body.context.client.visitorData, 'visitor-123');
+    assert.equal(body.playbackContext.contentPlaybackContext.html5Preference, 'HTML5_PREF_WANTS');
+    assert.equal(body.videoId, 'dQw4w9WgXcQ');
+    return { text: async () => html('dQw4w9WgXcQ') };
   });
   const { text } = await fetchTranscript('dQw4w9WgXcQ', fetchFn);
-  assert.equal(seen[0], 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  // prettyPrint=false: the parsers read the response as text, and the pretty form breaks them.
+  assert.match(seen[0] ?? '', /watch\?v=dQw4w9WgXcQ&hl=en$/);
+  assert.match(seen[1] ?? '', /youtubei\/v1\/player\?prettyPrint=false$/);
+  assert.match(seen[2] ?? '', /timedtext.*fmt=json3/);
   assert.equal((text ?? '').length > 200, true);
 });
 

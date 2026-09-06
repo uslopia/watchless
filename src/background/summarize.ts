@@ -173,6 +173,8 @@ async function summarize(
   };
   const session = await LanguageModel.create({
     initialPrompts: [{ role: 'system', content: systemPrompt(lang, meta, preset) }],
+    topK: 3,
+    temperature: 0.3,
     monitor(m) {
       // The listener outlives the port: a runner tab closes as soon as its job reports back, and
       // posting into the dead port throws out of an event handler nobody awaits.

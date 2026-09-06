@@ -1,4 +1,5 @@
 import { getQueue } from '../lib/storage.ts';
+import { fetchTranscript } from '../lib/transcript.ts';
 import {
   done,
   enqueue,
@@ -60,6 +61,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse): boolean | unde
   if (msg.type === 'runNow') {
     void openRunner(msg.v);
     return;
+  }
+  // The headless transcript, asked here and not from the page on purpose: a fetch from the worker
+  // is cross-origin, so it carries no youtube.com cookie. That anonymity is the point — the
+  // InnerTube route works because the call is not the signed-in WEB client.
+  if (msg.type === 'transcript') {
+    fetchTranscript(msg.v, (url, init) => fetch(url, init))
+      .then((res) => sendResponse(res.text))
+      .catch(() => sendResponse(null));
+    return true;
   }
   // Fire and forget: the page asks on arrival, nothing waits for the answer.
   if (msg.type === 'prewarm') {

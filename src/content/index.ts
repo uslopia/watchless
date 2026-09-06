@@ -30,9 +30,17 @@ const report = (message: object): void => {
 
 // The one failure path for both modes. fail() reaches panel(), which opens a <dialog>: in a
 // background tab that would be an invisible modal nobody can dismiss.
-function abort(message: string): void {
-  if (RUNNER) report({ type: 'jobFailed', reason: message });
-  else fail(message);
+//
+// On a runner the reason is the only message a hidden tab gets out before it is closed, so it
+// carries a short suffix naming what the page itself cannot report: whether it was hidden, and
+// which stage failed. The worker logs it as one line; the interactive branch stays plain.
+function abort(message: string, stage?: string): void {
+  if (RUNNER) {
+    const context = `${document.visibilityState}${stage ? `|${stage}` : ''}`;
+    report({ type: 'jobFailed', reason: `${message} [${context}]` });
+  } else {
+    fail(message);
+  }
 }
 
 document.addEventListener('yt-navigate-finish', init);
@@ -120,7 +128,10 @@ async function run(override?: Preset) {
     if (videoId() !== v) return; // the failure belongs to a video the user has left
     state.port?.disconnect();
     state.port = null;
-    abort(e instanceof Error ? e.message : String(e));
+    // The scrape functions tag their errors with the step that failed; anything else (getMeta,
+    // a dead port) has no stage to name.
+    const stage = e instanceof Error ? (e as Error & { stage?: string }).stage : undefined;
+    abort(e instanceof Error ? e.message : String(e), stage);
   }
 }
 
@@ -154,7 +165,7 @@ async function start(v: string | null, override?: Preset) {
   port.onDisconnect.addListener(() => {
     if (state.port !== port) return;
     state.port = null;
-    abort(t('error_interrupted'));
+    abort(t('error_interrupted'), step);
     if (debug) diagnose(step, Math.round(performance.now() - t0));
   });
   port.onMessage.addListener((msg: FromWorker) => {
@@ -166,7 +177,7 @@ async function start(v: string | null, override?: Preset) {
       step = msg.step;
       setBtn('busy', msg.step, msg.pct);
     }
-    if (msg.type === 'error') abort(msg.message);
+    if (msg.type === 'error') abort(msg.message, step);
     if (msg.type === 'done') {
       state.summary = msg.summary;
       state.format = msg.format;
