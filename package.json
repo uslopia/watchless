@@ -15,12 +15,12 @@
     "knip": "knip"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.10",
-    "@types/chrome": "^0.2.7",
-    "@types/dom-chromium-ai": "^0.0.17",
-    "@types/node": "^26.3.0",
+    "@biomejs/biome": "^2.6.4",
+    "@types/chrome": "^0.3.7",
+    "@types/dom-chromium-ai": "^0.0.18",
+    "@types/node": "^26.6.6",
     "esbuild": "^0.28.2",
-    "knip": "^6.32.3",
+    "knip": "^6.44.1",
     "typescript": "^7.0.2"
   }
 }
